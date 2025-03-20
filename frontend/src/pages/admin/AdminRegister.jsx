@@ -7,8 +7,6 @@ import { FaUserShield, FaLock, FaIdCard, FaPhone, FaUser } from 'react-icons/fa'
 const AdminRegister = () => {
   const [formData, setFormData] = useState({
     A_ID: '',
-    firstName: '',
-    lastName: '',
     userName: '',
     password: '',
     confirmPassword: '',
@@ -45,7 +43,7 @@ const AdminRegister = () => {
     e.preventDefault();
     
     // Form validation
-    if (!formData.A_ID || !formData.firstName || !formData.lastName || !formData.userName || 
+    if (!formData.A_ID || !formData.userName || 
         !formData.password || !formData.confirmPassword || !formData.phoneNo) {
       enqueueSnackbar('Please fill in all fields', { variant: 'error' });
       return;
@@ -62,8 +60,6 @@ const AdminRegister = () => {
       // Prepare data for API call (remove confirmPassword)
       const apiData = {
         A_ID: formData.A_ID,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
         userName: formData.userName,
         password: formData.password,
         phoneNo: formData.phoneNo
@@ -111,42 +107,6 @@ const AdminRegister = () => {
                   readOnly
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500"
                   placeholder="Admin ID"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label htmlFor="firstName" className="sr-only">First Name</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaUser className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="First Name"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label htmlFor="lastName" className="sr-only">Last Name</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaUser className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Last Name"
                 />
               </div>
             </div>

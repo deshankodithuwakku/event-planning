@@ -145,4 +145,46 @@ router.delete('/:id', async (request, response) => {
   }
 });
 
+// Route for customer login
+router.post('/login', async (request, response) => {
+  try {
+    const { userName, password } = request.body;
+
+    if (!userName || !password) {
+      return response.status(400).send({
+        message: 'Username and password are required',
+      });
+    }
+
+    // Find customer by username
+    const customer = await Customer.findOne({ userName });
+
+    if (!customer) {
+      return response.status(401).send({ message: 'Invalid username or password' });
+    }
+
+    // Check password (in a real app, you'd use bcrypt to compare hashed passwords)
+    if (customer.password !== password) {
+      return response.status(401).send({ message: 'Invalid username or password' });
+    }
+
+    // Generate simple token (in a real app, you'd use JWT)
+    const token = Buffer.from(`${customer.userName}:${Date.now()}`).toString('base64');
+
+    return response.status(200).json({
+      message: 'Login successful',
+      token,
+      customer: {
+        C_ID: customer.C_ID,
+        name: customer.name,
+        userName: customer.userName,
+        phoneNo: customer.phoneNo,
+      },
+    });
+  } catch (error) {
+    console.log(error.message);
+    response.status(500).send({ message: error.message });
+  }
+});
+
 export default router;

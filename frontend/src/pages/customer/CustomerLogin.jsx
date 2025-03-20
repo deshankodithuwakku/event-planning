@@ -31,26 +31,23 @@ const CustomerLogin = () => {
     setLoading(true);
     
     try {
-      // TODO: Implement actual login API call
-      // For now, we'll just simulate a login
-      console.log('Logging in customer:', formData);
+      // Implement actual login API call
+      const response = await axios.post('http://localhost:5555/api/customers/login', formData);
       
-      // Simulate API call success
-      setTimeout(() => {
+      if (response.data) {
+        // Store customer data and token in localStorage
+        localStorage.setItem('customerToken', response.data.token);
+        localStorage.setItem('customerData', JSON.stringify(response.data.customer));
+        
         enqueueSnackbar('Login successful!', { variant: 'success' });
         navigate('/');
-        setLoading(false);
-      }, 1000);
-      
-      // Actual API would look something like:
-      // const response = await axios.post('http://localhost:5555/api/customers/login', formData);
-      // if (response.data) {
-      //   localStorage.setItem('customerToken', response.data.token);
-      //   enqueueSnackbar('Login successful!', { variant: 'success' });
-      //   navigate('/');
-      // }
+      }
     } catch (error) {
-      enqueueSnackbar('Login failed. Please check your credentials.', { variant: 'error' });
+      enqueueSnackbar(
+        error.response?.data?.message || 'Login failed. Please check your credentials.',
+        { variant: 'error' }
+      );
+    } finally {
       setLoading(false);
     }
   };

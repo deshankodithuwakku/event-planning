@@ -4,6 +4,8 @@ import Home from './pages/Home';
 import Header from './components/Header';
 import CustomerLogin from './pages/customer/CustomerLogin';
 import CustomerRegister from './pages/customer/CustomerRegister';
+import CustomerProfile from './pages/customer/CustomerProfile';
+import CustomerProfileEdit from './pages/customer/CustomerProfileEdit';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminRegister from './pages/admin/AdminRegister';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -28,6 +30,8 @@ const App = () => {
           <Route path='/' element={<Home />} />
           <Route path='/customer/login' element={<CustomerLogin />} />
           <Route path='/customer/register' element={<CustomerRegister />} />
+          <Route path='/customer/profile' element={<CustomerProfile />} />
+          <Route path='/customer/profile/edit' element={<CustomerProfileEdit />} />
           <Route path='/admin/login' element={<AdminLogin />} />
           <Route path='/admin/register' element={<AdminRegister />} />
           <Route path='/admin/dashboard' element={<AdminDashboard />} />

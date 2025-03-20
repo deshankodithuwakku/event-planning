@@ -3,6 +3,23 @@ import { Admin } from '../models/adminModel.js';
 
 const router = express.Router();
 
+// Manual validation middleware instead of express-validator
+const validateAdmin = (req, res, next) => {
+  const { A_ID, userName, password, phoneNo } = req.body;
+  const errors = [];
+
+  if (!A_ID) errors.push('Admin ID is required');
+  if (!userName) errors.push('Username is required');
+  if (password && password.length < 6) errors.push('Password must be at least 6 characters long');
+  if (!phoneNo) errors.push('Phone number is required');
+
+  if (errors.length > 0) {
+    return res.status(400).json({ message: errors.join(', ') });
+  }
+
+  next();
+};
+
 // Route for admin login
 router.post('/login', async (request, response) => {
   try {
@@ -68,36 +85,24 @@ router.get('/generate-id', async (request, response) => {
 });
 
 // Route for creating a new admin
-router.post('/', async (request, response) => {
+router.post('/', validateAdmin, async (req, res) => {
   try {
-    if (
-      !request.body.A_ID ||
-      !request.body.firstName ||
-      !request.body.lastName ||
-      !request.body.userName ||
-      !request.body.password ||
-      !request.body.phoneNo
-    ) {
-      return response.status(400).send({
-        message: 'All fields are required: A_ID, firstName, lastName, userName, password, phoneNo',
-      });
-    }
+    const { A_ID, userName, password, phoneNo } = req.body;
+    
+    // Create new admin with the updated schema (no firstName, lastName)
+    const admin = new Admin({
+      A_ID,
+      userName,
+      password, // Note: In a real app, this should be hashed
+      phoneNo,
+    });
+    
+    const savedAdmin = await admin.save();
 
-    const newAdmin = {
-      A_ID: request.body.A_ID,
-      firstName: request.body.firstName,
-      lastName: request.body.lastName,
-      userName: request.body.userName,
-      password: request.body.password,
-      phoneNo: request.body.phoneNo,
-    };
-
-    const admin = await Admin.create(newAdmin);
-
-    return response.status(201).send(admin);
+    return res.status(201).send(savedAdmin);
   } catch (error) {
     console.log(error.message);
-    response.status(500).send({ message: error.message });
+    res.status(500).send({ message: error.message });
   }
 });
 
@@ -135,36 +140,31 @@ router.get('/:id', async (request, response) => {
 });
 
 // Route to update an admin
-router.put('/:id', async (request, response) => {
+router.put('/:id', validateAdmin, async (req, res) => {
   try {
-    const { id } = request.params;
-
-    if (
-      !request.body.firstName &&
-      !request.body.lastName &&
-      !request.body.userName &&
-      !request.body.password &&
-      !request.body.phoneNo
-    ) {
-      return response.status(400).send({
-        message: 'At least one field is required to update',
-      });
-    }
-
+    const { userName, password, phoneNo } = req.body;
+    
+    // Update admin with the updated schema (no firstName, lastName)
+    const updatedAdmin = {
+      userName,
+      password, // Note: In a real app, this should be hashed if it's changed
+      phoneNo,
+    };
+    
     const result = await Admin.findOneAndUpdate(
-      { A_ID: id },
-      request.body,
+      { A_ID: req.params.id },
+      updatedAdmin,
       { new: true }
     );
 
     if (!result) {
-      return response.status(404).json({ message: 'Admin not found' });
+      return res.status(404).json({ message: 'Admin not found' });
     }
 
-    return response.status(200).send({ message: 'Admin updated successfully', data: result });
+    return res.status(200).send({ message: 'Admin updated successfully', data: result });
   } catch (error) {
     console.log(error.message);
-    response.status(500).send({ message: error.message });
+    res.status(500).send({ message: error.message });
   }
 });
 

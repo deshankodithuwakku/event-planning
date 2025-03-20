@@ -7,7 +7,8 @@ import { FaUserAlt, FaLock, FaIdCard, FaPhone } from 'react-icons/fa';
 const CustomerRegister = () => {
   const [formData, setFormData] = useState({
     C_ID: '',
-    name: '',
+    firstName: '',
+    lastName: '',
     userName: '',
     password: '',
     confirmPassword: '',
@@ -44,7 +45,7 @@ const CustomerRegister = () => {
     e.preventDefault();
     
     // Form validation
-    if (!formData.C_ID || !formData.name || !formData.userName || 
+    if (!formData.C_ID || !formData.firstName || !formData.lastName || !formData.userName || 
         !formData.password || !formData.confirmPassword || !formData.phoneNo) {
       enqueueSnackbar('Please fill in all fields', { variant: 'error' });
       return;
@@ -61,7 +62,8 @@ const CustomerRegister = () => {
       // Prepare data for API call (remove confirmPassword)
       const apiData = {
         C_ID: formData.C_ID,
-        name: formData.name,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         userName: formData.userName,
         password: formData.password,
         phoneNo: formData.phoneNo
@@ -114,19 +116,37 @@ const CustomerRegister = () => {
             </div>
             
             <div>
-              <label htmlFor="name" className="sr-only">Full Name</label>
+              <label htmlFor="firstName" className="sr-only">First Name</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaUserAlt className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  id="name"
-                  name="name"
+                  id="firstName"
+                  name="firstName"
                   type="text"
-                  value={formData.name}
+                  value={formData.firstName}
                   onChange={handleChange}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500"
-                  placeholder="Full Name"
+                  placeholder="First Name"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="lastName" className="sr-only">Last Name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaUserAlt className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                  placeholder="Last Name"
                 />
               </div>
             </div>
