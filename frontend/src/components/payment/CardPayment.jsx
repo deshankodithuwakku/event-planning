@@ -14,6 +14,59 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
     expiryDate: '',
     cvv: ''
   });
+  // Add error state for real-time validation
+  const [errors, setErrors] = useState({
+    cardNumber: '',
+    cardName: '',
+    expiryDate: '',
+    cvv: ''
+  });
+
+  // Validation functions
+  const validateCardNumber = (value) => {
+    const cardNumberRegex = /^[\d\s-]{15,19}$/;
+    const cardNumberNoSpace = value.replace(/[\s-]/g, '');
+    if (!value) return '';
+    if (!cardNumberRegex.test(value) || cardNumberNoSpace.length < 15) {
+      return 'Please enter a valid card number';
+    }
+    return '';
+  };
+
+  const validateCardName = (value) => {
+    if (!value) return '';
+    const nameRegex = /^[a-zA-Z\s-]+$/;
+    if (!nameRegex.test(value)) {
+      return 'Please enter a valid cardholder name';
+    }
+    return '';
+  };
+
+  const validateExpiryDate = (value) => {
+    if (!value) return '';
+    const expiryRegex = /^(0[1-9]|1[0-2])\/([0-9]{2})$/;
+    if (!expiryRegex.test(value)) {
+      return 'Please enter a valid expiry date (MM/YY)';
+    }
+    
+    // Check if card is expired
+    const [month, year] = value.split('/');
+    const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
+    const currentDate = new Date();
+    if (expiryDate < currentDate) {
+      return 'The card has expired';
+    }
+    return '';
+  };
+
+  const validateCVV = (value) => {
+    if (!value) return '';
+    const cvvRegex = /^[0-9]{3,4}$/;
+    if (!cvvRegex.test(value)) {
+      return 'Please enter a valid CVV (3-4 digits)';
+    }
+    return '';
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,14 +74,37 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
       ...prev,
       [name]: value
     }));
+
+    // Validate in real-time
+    if (name === 'cardName') {
+      setErrors(prev => ({
+        ...prev,
+        cardName: validateCardName(value)
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const cardNumberError = validateCardNumber(formData.cardNumber);
+    const cardNameError = validateCardName(formData.cardName);
+    const expiryDateError = validateExpiryDate(formData.expiryDate);
+    const cvvError = validateCVV(formData.cvv);
+    
+    setErrors({
+      cardNumber: cardNumberError,
+      cardName: cardNameError,
+      expiryDate: expiryDateError,
+      cvv: cvvError
+    });
+    
+    return !(cardNumberError || cardNameError || expiryDateError || cvvError);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Simple validation
-    if (!formData.cardNumber || !formData.cardName || !formData.expiryDate || !formData.cvv) {
-      enqueueSnackbar('Please fill in all fields', { variant: 'error' });
+    // Run full validation check
+    if (!validateForm()) {
       return;
     }
 
@@ -63,6 +139,44 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
     }
   };
 
+  // Format card number with spaces as user types
+  const handleCardNumberChange = (e) => {
+    let value = e.target.value.replace(/\D/g, '');
+    // Insert space after every 4 digits
+    value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+    // Limit to 19 chars (16 digits + 3 spaces)
+    value = value.substring(0, 19);
+    
+    setFormData(prev => ({
+      ...prev,
+      cardNumber: value
+    }));
+    
+    // Add real-time validation
+    setErrors(prev => ({
+      ...prev,
+      cardNumber: validateCardNumber(value)
+    }));
+  };
+
+  // Format expiry date as MM/YY as user types
+  const handleExpiryDateChange = (e) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 2) {
+      value = `${value.substring(0, 2)}/${value.substring(2, 4)}`;
+    }
+    setFormData(prev => ({
+      ...prev,
+      expiryDate: value
+    }));
+    
+    // Add real-time validation
+    setErrors(prev => ({
+      ...prev,
+      expiryDate: validateExpiryDate(value)
+    }));
+  };
+
   return (
     <div>
       <h2 className="text-lg font-semibold text-sky-700 mb-4">Credit Card Payment</h2>
@@ -81,10 +195,12 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
               name="cardNumber"
               placeholder="1234 5678 9012 3456"
               value={formData.cardNumber}
-              onChange={handleChange}
-              className="pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+              onChange={handleCardNumberChange}
+              className={`pl-10 block w-full px-3 py-2 border ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500`}
+              maxLength="19"
             />
           </div>
+          {errors.cardNumber && <p className="mt-1 text-sm text-red-600">{errors.cardNumber}</p>}
         </div>
 
         <div>
@@ -102,9 +218,10 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
               placeholder="John Doe"
               value={formData.cardName}
               onChange={handleChange}
-              className="pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+              className={`pl-10 block w-full px-3 py-2 border ${errors.cardName ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500`}
             />
           </div>
+          {errors.cardName && <p className="mt-1 text-sm text-red-600">{errors.cardName}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -122,10 +239,12 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
                 name="expiryDate"
                 placeholder="MM/YY"
                 value={formData.expiryDate}
-                onChange={handleChange}
-                className="pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                onChange={handleExpiryDateChange}
+                className={`pl-10 block w-full px-3 py-2 border ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500`}
+                maxLength="5"
               />
             </div>
+            {errors.expiryDate && <p className="mt-1 text-sm text-red-600">{errors.expiryDate}</p>}
           </div>
           
           <div>
@@ -142,10 +261,19 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
                 name="cvv"
                 placeholder="123"
                 value={formData.cvv}
-                onChange={handleChange}
-                className="pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setFormData(prev => ({ ...prev, cvv: value }));
+                  setErrors(prev => ({
+                    ...prev,
+                    cvv: validateCVV(value)
+                  }));
+                }}
+                className={`pl-10 block w-full px-3 py-2 border ${errors.cvv ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500`}
+                maxLength="4"
               />
             </div>
+            {errors.cvv && <p className="mt-1 text-sm text-red-600">{errors.cvv}</p>}
           </div>
         </div>
 
