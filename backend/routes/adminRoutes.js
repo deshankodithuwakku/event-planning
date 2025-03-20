@@ -3,6 +3,47 @@ import { Admin } from '../models/adminModel.js';
 
 const router = express.Router();
 
+// Route for admin login
+router.post('/login', async (request, response) => {
+  try {
+    const { userName, password } = request.body;
+
+    if (!userName || !password) {
+      return response.status(400).send({
+        message: 'Username and password are required',
+      });
+    }
+
+    // Find admin by username
+    const admin = await Admin.findOne({ userName });
+
+    if (!admin) {
+      return response.status(401).send({ message: 'Invalid username or password' });
+    }
+
+    // Check password (in a real app, you'd use bcrypt to compare hashed passwords)
+    if (admin.password !== password) {
+      return response.status(401).send({ message: 'Invalid username or password' });
+    }
+
+    // Generate simple token (in a real app, you'd use JWT)
+    const token = Buffer.from(`${admin.userName}:${Date.now()}`).toString('base64');
+
+    return response.status(200).json({
+      message: 'Login successful',
+      token,
+      admin: {
+        A_ID: admin.A_ID,
+        userName: admin.userName,
+        phoneNo: admin.phoneNo,
+      },
+    });
+  } catch (error) {
+    console.log(error.message);
+    response.status(500).send({ message: error.message });
+  }
+});
+
 // Route for generating a unique admin ID
 router.get('/generate-id', async (request, response) => {
   try {

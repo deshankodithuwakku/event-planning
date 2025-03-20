@@ -4,6 +4,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import adminRoutes from './routes/adminRoutes.js';
 import customerRoutes from './routes/customerRoutes.js';
+import eventRoutes from './routes/eventRoutes.js';
+import packageRoutes from './routes/packageRoutes.js';
 
 const app = express();
 
@@ -32,6 +34,12 @@ app.use('/api/admins', adminRoutes);
 
 // Use the customer routes 
 app.use('/api/customers', customerRoutes);
+
+// Use the event routes
+app.use('/api/events', eventRoutes);
+
+// Use the package routes
+app.use('/api/packages', packageRoutes);
 
 mongoose
   .connect(mongoDBURL)

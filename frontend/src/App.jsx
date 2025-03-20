@@ -6,6 +6,14 @@ import CustomerLogin from './pages/customer/CustomerLogin';
 import CustomerRegister from './pages/customer/CustomerRegister';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminRegister from './pages/admin/AdminRegister';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import EventCreate from './pages/admin/EventCreate';
+import EventView from './pages/admin/EventView';
+import EventEdit from './pages/admin/EventEdit';
+import PackageCreate from './pages/admin/PackageCreate';
+// Import new customer pages
+import EventsList from './pages/customer/EventsList';
+import EventDetails from './pages/customer/EventDetails';
 
 const App = () => {
   return (
@@ -18,12 +26,16 @@ const App = () => {
           <Route path='/customer/register' element={<CustomerRegister />} />
           <Route path='/admin/login' element={<AdminLogin />} />
           <Route path='/admin/register' element={<AdminRegister />} />
-          {/* Placeholder routes - these will need to be implemented later */}
-          <Route path='/events' element={<div className="p-8">Events Page Coming Soon</div>} />
-          <Route path='/events/create' element={<div className="p-8">Create Event Page Coming Soon</div>} />
+          <Route path='/admin/dashboard' element={<AdminDashboard />} />
+          <Route path='/admin/events/create' element={<EventCreate />} />
+          <Route path='/admin/events/:eventId' element={<EventView />} />
+          <Route path='/admin/events/edit/:eventId' element={<EventEdit />} />
+          <Route path='/admin/events/:eventId/packages/create' element={<PackageCreate />} />
+          {/* New customer-facing routes */}
+          <Route path='/events' element={<EventsList />} />
+          <Route path='/events/:eventId' element={<EventDetails />} />
           <Route path='/about' element={<div className="p-8">About Page Coming Soon</div>} />
           <Route path='/contact' element={<div className="p-8">Contact Page Coming Soon</div>} />
-          <Route path='/admin/dashboard' element={<div className="p-8">Admin Dashboard Coming Soon</div>} />
         </Routes>
       </main>
     </div>

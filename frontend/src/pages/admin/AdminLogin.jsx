@@ -31,26 +31,25 @@ const AdminLogin = () => {
     setLoading(true);
     
     try {
-      // TODO: Implement actual login API call
-      // For now, we'll just simulate a login
-      console.log('Logging in admin:', formData);
+      // Implement actual login API call
+      const response = await axios.post('http://localhost:5555/api/admins/login', formData);
       
-      // Simulate API call success
-      setTimeout(() => {
+      if (response.data && response.data.token) {
+        // Store admin data in localStorage
+        localStorage.setItem('adminToken', response.data.token);
+        localStorage.setItem('adminData', JSON.stringify(response.data.admin));
+        
         enqueueSnackbar('Admin login successful!', { variant: 'success' });
         navigate('/admin/dashboard');
-        setLoading(false);
-      }, 1000);
-      
-      // Actual API would look something like:
-      // const response = await axios.post('http://localhost:5555/api/admins/login', formData);
-      // if (response.data) {
-      //   localStorage.setItem('adminToken', response.data.token);
-      //   enqueueSnackbar('Login successful!', { variant: 'success' });
-      //   navigate('/admin/dashboard');
-      // }
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
-      enqueueSnackbar('Login failed. Please check your credentials.', { variant: 'error' });
+      enqueueSnackbar(
+        error.response?.data?.message || 'Login failed. Please check your credentials.', 
+        { variant: 'error' }
+      );
+    } finally {
       setLoading(false);
     }
   };
