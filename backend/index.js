@@ -2,6 +2,8 @@ import express from 'express';
 import { PORT, mongoDBURL } from './config.js';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import adminRoutes from './routes/adminRoutes.js';
+import customerRoutes from './routes/customerRoutes.js';
 
 const app = express();
 
@@ -22,9 +24,14 @@ app.use(cors());
 
 app.get('/', (request, response) => {
   console.log(request);
-  return response.status(234).send('Welcome To MERN Stack Tutorial');
+  return response.status(234).send('Welcome To Event Planning API');
 });
 
+// Use the admin routes
+app.use('/api/admins', adminRoutes);
+
+// Use the customer routes 
+app.use('/api/customers', customerRoutes);
 
 mongoose
   .connect(mongoDBURL)
