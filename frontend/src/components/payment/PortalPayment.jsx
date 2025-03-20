@@ -21,11 +21,33 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
     }));
   };
 
+  const validateForm = () => {
+    // Reference validation - should be alphanumeric and at least 6 characters
+    const referenceRegex = /^[a-zA-Z0-9-_]{6,}$/;
+    if (!formData.reference || !referenceRegex.test(formData.reference)) {
+      enqueueSnackbar('Please enter a valid reference number (at least 6 alphanumeric characters)', { variant: 'error' });
+      return false;
+    }
+
+    // Description validation - should not be empty and not too long
+    if (!formData.description || formData.description.trim() === '') {
+      enqueueSnackbar('Please enter a payment description', { variant: 'error' });
+      return false;
+    }
+
+    if (formData.description.length > 500) {
+      enqueueSnackbar('Description is too long (maximum 500 characters)', { variant: 'error' });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.reference) {
-      enqueueSnackbar('Please enter a payment reference', { variant: 'error' });
+    // Run full validation check
+    if (!validateForm()) {
       return;
     }
 
@@ -58,6 +80,15 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
     }
   };
 
+  // Format reference number as user types (uppercase and no spaces)
+  const handleReferenceChange = (e) => {
+    const value = e.target.value.toUpperCase().replace(/\s/g, '');
+    setFormData(prev => ({
+      ...prev,
+      reference: value
+    }));
+  };
+
   return (
     <div>
       <h2 className="text-lg font-semibold text-sky-700 mb-4">Payment Portal</h2>
@@ -72,7 +103,7 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
         
         <div>
           <label htmlFor="reference" className="block text-sm font-medium text-gray-700 mb-1">
-            Payment Reference Number
+            Payment Reference Number *
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -84,15 +115,16 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
               name="reference"
               placeholder="Enter your payment reference"
               value={formData.reference}
-              onChange={handleChange}
+              onChange={handleReferenceChange}
               className="pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
             />
           </div>
+          <p className="mt-1 text-xs text-gray-500">Reference should be at least 6 characters (letters, numbers, hyphens allowed)</p>
         </div>
 
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-            Payment Description
+            Payment Description *
           </label>
           <textarea
             id="description"
@@ -101,7 +133,9 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
             value={formData.description}
             onChange={handleChange}
             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+            maxLength={500}
           />
+          <p className="mt-1 text-xs text-gray-500">{formData.description.length}/500 characters</p>
         </div>
 
         <div className="pt-4 flex space-x-3">
