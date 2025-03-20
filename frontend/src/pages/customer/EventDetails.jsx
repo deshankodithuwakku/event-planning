@@ -40,9 +40,13 @@ const EventDetails = () => {
       alert('Please select a package first');
       return;
     }
-    // In a real app, you would navigate to a booking page with the selected package
-    alert(`You selected ${selectedPackage.Pg_ID} for $${selectedPackage.Pg_price}. 
-    In a complete application, this would take you to a booking page.`);
+    // Navigate to payment page with event and package details
+    navigate('/payment', { 
+      state: { 
+        event, 
+        selectedPackage 
+      }
+    });
   };
 
   if (loading) {

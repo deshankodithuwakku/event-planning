@@ -1,0 +1,139 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
+import axios from 'axios';
+import { FaArrowLeft, FaCreditCard, FaWallet, FaFilter } from 'react-icons/fa';
+
+const PaymentsList = () => {
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all'); // 'all', 'card', 'portal'
+  const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if admin is logged in
+    const adminData = localStorage.getItem('adminData');
+    if (!adminData) {
+      navigate('/admin/login');
+      return;
+    }
+
+    fetchPayments();
+  }, [navigate, filter]);
+
+  const fetchPayments = async () => {
+    try {
+      let endpoint = 'http://localhost:5555/api/payments';
+      
+      // Apply filter if needed
+      if (filter === 'card') {
+        endpoint = 'http://localhost:5555/api/payments/card';
+      } else if (filter === 'portal') {
+        endpoint = 'http://localhost:5555/api/payments/portal';
+      }
+      
+      const response = await axios.get(endpoint);
+      setPayments(response.data);
+    } catch (error) {
+      enqueueSnackbar('Failed to fetch payments', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
+  // Get payment type icon
+  const getPaymentTypeIcon = (type) => {
+    if (type === 'Card') {
+      return <FaCreditCard className="text-blue-500" />;
+    } else if (type === 'Portal') {
+      return <FaWallet className="text-green-500" />;
+    }
+    return null;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => navigate('/admin/dashboard')}
+          className="flex items-center text-purple-600 hover:text-purple-800 mb-6"
+        >
+          <FaArrowLeft className="mr-2" /> Back to Dashboard
+        </button>
+        
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="text-2xl font-semibold text-purple-800">Payment Transactions</h2>
+            <div className="flex items-center space-x-2">
+              <FaFilter className="text-gray-500" />
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="border-gray-300 rounded-md shadow-sm focus:border-purple-500 focus:ring-purple-500"
+              >
+                <option value="all">All Payments</option>
+                <option value="card">Card Payments</option>
+                <option value="portal">Portal Payments</option>
+              </select>
+            </div>
+          </div>
+          
+          {loading ? (
+            <div className="p-6 text-center">Loading payments...</div>
+          ) : payments.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              No payment records found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {payments.map((payment) => (
+                    <tr key={payment._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{payment.P_ID}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {getPaymentTypeIcon(payment.paymentType)}
+                          <span className="ml-2">{payment.paymentType}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 text-sm font-semibold bg-green-100 text-green-800 rounded-full">
+                          ${payment.p_amount}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(payment.p_date)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                        {payment.paymentType === 'Card' ? payment.c_description : payment.p_description}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PaymentsList;

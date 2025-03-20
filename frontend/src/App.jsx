@@ -11,9 +11,13 @@ import EventCreate from './pages/admin/EventCreate';
 import EventView from './pages/admin/EventView';
 import EventEdit from './pages/admin/EventEdit';
 import PackageCreate from './pages/admin/PackageCreate';
-// Import new customer pages
+import PaymentsList from './pages/admin/PaymentsList';
+// Import customer pages
 import EventsList from './pages/customer/EventsList';
 import EventDetails from './pages/customer/EventDetails';
+// Import payment pages - corrected paths
+import PaymentPage from './pages/customer/PaymentPage';
+import PaymentSuccess from './pages/customer/PaymentSuccess';
 
 const App = () => {
   return (
@@ -31,9 +35,13 @@ const App = () => {
           <Route path='/admin/events/:eventId' element={<EventView />} />
           <Route path='/admin/events/edit/:eventId' element={<EventEdit />} />
           <Route path='/admin/events/:eventId/packages/create' element={<PackageCreate />} />
+          <Route path='/admin/payments' element={<PaymentsList />} />
           {/* New customer-facing routes */}
           <Route path='/events' element={<EventsList />} />
           <Route path='/events/:eventId' element={<EventDetails />} />
+          {/* New payment routes */}
+          <Route path='/payment' element={<PaymentPage />} />
+          <Route path='/payment/success' element={<PaymentSuccess />} />
           <Route path='/about' element={<div className="p-8">About Page Coming Soon</div>} />
           <Route path='/contact' element={<div className="p-8">Contact Page Coming Soon</div>} />
         </Routes>

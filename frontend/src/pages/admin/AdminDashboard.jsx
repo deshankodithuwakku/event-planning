@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCreditCard } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const [events, setEvents] = useState([]);
@@ -69,6 +69,12 @@ const AdminDashboard = () => {
               className="flex items-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
             >
               <FaPlus className="mr-2" /> Create Event
+            </Link>
+            <Link
+              to="/admin/payments"
+              className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+            >
+              <FaCreditCard className="mr-2" /> View Payments
             </Link>
             <button
               onClick={handleLogout}
