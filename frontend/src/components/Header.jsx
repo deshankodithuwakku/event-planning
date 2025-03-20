@@ -13,7 +13,7 @@ const Header = () => {
           {/* Logo and site name */}
           <Link to="/" className="flex items-center space-x-2">
             <MdEventAvailable className="text-white text-3xl" />
-            <span className="text-white text-xl font-bold">EventPro</span>
+            <span className="text-white text-xl font-bold">Bloomz (pvt) Ltd.</span>
           </Link>
 
           {/* Navigation links */}
