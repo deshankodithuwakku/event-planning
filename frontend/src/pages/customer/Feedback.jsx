@@ -1,21 +1,21 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useSnackbar } from 'notistack';
 import './Feedback.css';
 
 const Feedback = () => {
   const [message, setMessage] = useState('');
-  const [name, setName] = useState('');
   const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5555/api/feedback', { message, name });
+      const response = await axios.post('http://localhost:5555/api/feedback', { message });
       setMessage('');
-      setName('');
       enqueueSnackbar('Feedback submitted successfully!', { variant: 'success' });
-      console.log('Server response:', response.data);
+      navigate('/feedbackviews');
     } catch (error) {
       console.error('Error details:', error.response || error);
       enqueueSnackbar('Failed to submit feedback', { variant: 'error' });
@@ -26,15 +26,6 @@ const Feedback = () => {
     <div className="feedback-container">
       <h2>Share Your Feedback</h2>
       <form onSubmit={handleSubmit} className="feedback-form">
-        <div className="form-group">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your Name"
-            required
-          />
-        </div>
         <div className="form-group">
           <textarea
             value={message}
