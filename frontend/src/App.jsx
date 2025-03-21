@@ -21,6 +21,7 @@ import EventDetails from './pages/customer/EventDetails';
 import PaymentPage from './pages/customer/PaymentPage';
 import PaymentSuccess from './pages/customer/PaymentSuccess';
 import Feedback from './pages/customer/Feedback';
+import FeedbackViews from './pages/customer/FeedbackViews';
 
 const App = () => {
   return (
@@ -48,6 +49,7 @@ const App = () => {
           <Route path='/payment' element={<PaymentPage />} />
           <Route path='/payment/success' element={<PaymentSuccess />} />
           <Route path='/feedback' element={<Feedback />} />
+          <Route path='/feedbackviews' element={<FeedbackViews />} />
           <Route path='/about' element={<div className="p-8">About Page Coming Soon</div>} />
           <Route path='/contact' element={<div className="p-8">Contact Page Coming Soon</div>} />
         </Routes>

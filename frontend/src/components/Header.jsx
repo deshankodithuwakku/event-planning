@@ -45,6 +45,7 @@ const Header = () => {
             <Link to="/events" className="text-white hover:text-sky-200 transition">Events</Link>
             <Link to="/about" className="text-white hover:text-sky-200 transition">About</Link>
             <Link to="/contact" className="text-white hover:text-sky-200 transition">Contact</Link>
+            <Link to="/feedbackviews" className="text-white hover:text-sky-200 transition">Feedback</Link>
             {isLoggedIn && (
               <Link to="/customer/profile" className="text-white hover:text-sky-200 transition">Profile</Link>
             )}
