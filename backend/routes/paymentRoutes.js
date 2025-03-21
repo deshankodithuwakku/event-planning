@@ -94,4 +94,61 @@ router.get('/card', async (req, res) => {
   }
 });
 
+// Update a payment record
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { p_amount, p_description, c_description } = req.body;
+    
+    // Find the payment to determine its type
+    const payment = await Payment.findById(id);
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+    
+    // Update fields based on payment type
+    if (payment.paymentType === 'Card') {
+      const updatedPayment = await CardPayment.findByIdAndUpdate(
+        id,
+        { p_amount, c_description },
+        { new: true }
+      );
+      res.json(updatedPayment);
+    } else if (payment.paymentType === 'Portal') {
+      const updatedPayment = await PortalPayment.findByIdAndUpdate(
+        id,
+        { p_amount, p_description },
+        { new: true }
+      );
+      res.json(updatedPayment);
+    } else {
+      // Generic payment update (base fields only)
+      const updatedPayment = await Payment.findByIdAndUpdate(
+        id,
+        { p_amount },
+        { new: true }
+      );
+      res.json(updatedPayment);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a payment record
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const payment = await Payment.findByIdAndDelete(id);
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+    
+    res.json({ message: 'Payment record deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

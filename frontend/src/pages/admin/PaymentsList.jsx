@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaArrowLeft, FaCreditCard, FaWallet, FaFilter } from 'react-icons/fa';
+import { FaArrowLeft, FaCreditCard, FaWallet, FaFilter, FaEdit, FaTrash } from 'react-icons/fa';
+import EditPayment from './EditPayment';
 
 const PaymentsList = () => {
   const [payments, setPayments] = useState([]);
@@ -10,6 +11,8 @@ const PaymentsList = () => {
   const [filter, setFilter] = useState('all'); // 'all', 'card', 'portal'
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     // Check if admin is logged in
@@ -42,6 +45,39 @@ const PaymentsList = () => {
     }
   };
 
+  const handleDeletePayment = async (paymentId) => {
+    if (window.confirm('Are you sure you want to delete this payment record?')) {
+      try {
+        await axios.delete(`http://localhost:5555/api/payments/${paymentId}`);
+        enqueueSnackbar('Payment record deleted successfully', { variant: 'success' });
+        fetchPayments();
+      } catch (error) {
+        enqueueSnackbar('Failed to delete payment record', { variant: 'error' });
+      }
+    }
+  };
+
+  const handleEditClick = (payment) => {
+    setSelectedPayment(payment);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setIsEditModalOpen(false);
+    setSelectedPayment(null);
+  };
+
+  const handleEditSave = async (editedPayment) => {
+    try {
+      await axios.put(`http://localhost:5555/api/payments/${editedPayment._id}`, editedPayment);
+      enqueueSnackbar('Payment updated successfully', { variant: 'success' });
+      setIsEditModalOpen(false);
+      fetchPayments();
+    } catch (error) {
+      enqueueSnackbar('Failed to update payment', { variant: 'error' });
+    }
+  };
+
   // Format date for display
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -60,6 +96,14 @@ const PaymentsList = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      {isEditModalOpen && selectedPayment && (
+        <EditPayment 
+          payment={selectedPayment}
+          onClose={handleEditClose}
+          onSave={handleEditSave}
+        />
+      )}
+      
       <div className="max-w-6xl mx-auto">
         <button
           onClick={() => navigate('/admin/dashboard')}
@@ -101,6 +145,7 @@ const PaymentsList = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -123,6 +168,22 @@ const PaymentsList = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                         {payment.paymentType === 'Card' ? payment.c_description : payment.p_description}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-3">
+                          <button
+                            onClick={() => handleEditClick(payment)}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePayment(payment._id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
