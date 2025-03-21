@@ -110,9 +110,15 @@ const CustomerProfile = () => {
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition"
+                className="flex items-center justify-center px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition"
               >
                 <FaSignOutAlt className="mr-2" /> Logout
+              </button>
+              <button
+                onClick={() => navigate('/customer/feedback-manage')}
+                className="flex items-center justify-center px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition"
+              >
+                Manage Feedback
               </button>
             </div>
           </div>
