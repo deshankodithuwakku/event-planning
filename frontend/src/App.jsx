@@ -20,6 +20,7 @@ import EventDetails from './pages/customer/EventDetails';
 // Import payment pages - corrected paths
 import PaymentPage from './pages/customer/PaymentPage';
 import PaymentSuccess from './pages/customer/PaymentSuccess';
+import Feedback from './pages/customer/Feedback';
 
 const App = () => {
   return (
@@ -46,6 +47,7 @@ const App = () => {
           {/* New payment routes */}
           <Route path='/payment' element={<PaymentPage />} />
           <Route path='/payment/success' element={<PaymentSuccess />} />
+          <Route path='/feedback' element={<Feedback />} />
           <Route path='/about' element={<div className="p-8">About Page Coming Soon</div>} />
           <Route path='/contact' element={<div className="p-8">Contact Page Coming Soon</div>} />
         </Routes>

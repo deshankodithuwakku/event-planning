@@ -7,6 +7,7 @@ import customerRoutes from './routes/customerRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import packageRoutes from './routes/packageRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import feedbackRoutes from './routes/feedbackRoutes.js';
 
 const app = express();
 
@@ -43,6 +44,8 @@ app.use('/api/events', eventRoutes);
 app.use('/api/packages', packageRoutes);
 
 app.use('/api/payments', paymentRoutes);
+
+app.use('/api/feedback', feedbackRoutes);
 
 mongoose
   .connect(mongoDBURL)

@@ -1,0 +1,44 @@
+.feedback-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-container h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+  font-size: 1rem;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
