@@ -42,13 +42,29 @@ const FeedbackManage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this feedback?')) {
+    if (window.confirm('Are you sure you want to delete this feedback? This action cannot be undone.')) {
       try {
-        await axios.delete(`http://localhost:5555/api/feedback/${id}`);
-        fetchFeedbacks();
-        enqueueSnackbar('Feedback deleted successfully', { variant: 'success' });
+        const response = await axios.delete(`http://localhost:5555/api/feedback/${id}`);
+        
+        if (response.data.status === 'success') {
+          // Remove from local state
+          setFeedbacks(feedbacks.filter(feedback => feedback._id !== id));
+          enqueueSnackbar('Feedback deleted successfully', { 
+            variant: 'success',
+            autoHideDuration: 3000
+          });
+        } else {
+          throw new Error(response.data.message || 'Error deleting feedback');
+        }
       } catch (error) {
-        enqueueSnackbar('Failed to delete feedback', { variant: 'error' });
+        const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.error || 
+                           'Failed to delete feedback';
+        enqueueSnackbar(errorMessage, { 
+          variant: 'error',
+          autoHideDuration: 4000
+        });
+        console.error('Delete feedback error:', error);
       }
     }
   };
