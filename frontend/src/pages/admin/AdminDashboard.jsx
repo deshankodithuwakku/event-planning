@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCreditCard } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCreditCard, FaUsers } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const [events, setEvents] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(true);
   const [adminData, setAdminData] = useState(null);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ const AdminDashboard = () => {
 
     setAdminData(JSON.parse(storedAdminData));
     fetchEvents();
+    fetchUsers();
   }, [navigate]);
 
   const fetchEvents = async () => {
@@ -31,6 +34,17 @@ const AdminDashboard = () => {
       enqueueSnackbar('Failed to fetch events', { variant: 'error' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get('http://localhost:5555/api/customers');
+      setUsers(response.data.data);
+    } catch (error) {
+      enqueueSnackbar('Failed to fetch users', { variant: 'error' });
+    } finally {
+      setUsersLoading(false);
     }
   };
 
@@ -49,6 +63,18 @@ const AdminDashboard = () => {
         fetchEvents();
       } catch (error) {
         enqueueSnackbar('Failed to delete event', { variant: 'error' });
+      }
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await axios.delete(`http://localhost:5555/api/customers/${userId}`);
+        enqueueSnackbar('User deleted successfully', { variant: 'success' });
+        fetchUsers();
+      } catch (error) {
+        enqueueSnackbar('Failed to delete user', { variant: 'error' });
       }
     }
   };
@@ -85,7 +111,8 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        {/* Events Section */}
+        <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800">Manage Events</h2>
           </div>
@@ -135,6 +162,60 @@ const AdminDashboard = () => {
                           </Link>
                           <button 
                             onClick={() => handleDeleteEvent(event.E_ID)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Users Section */}
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-800">Manage Users</h2>
+            <div className="flex items-center text-purple-600">
+              <FaUsers className="mr-2" /> {users.length} Users
+            </div>
+          </div>
+          
+          {usersLoading ? (
+            <div className="p-6 text-center">Loading users...</div>
+          ) : users.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              No users found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.map((user) => (
+                    <tr key={user._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.C_ID}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {user.firstName} {user.lastName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phoneNo}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button 
+                            onClick={() => handleDeleteUser(user.C_ID)}
                             className="text-red-600 hover:text-red-900"
                           >
                             <FaTrash />
