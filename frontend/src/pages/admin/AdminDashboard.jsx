@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCreditCard, FaUsers } from 'react-icons/fa';
+import EditUser from './EditUser';
 
 const AdminDashboard = () => {
   const [events, setEvents] = useState([]);
@@ -10,6 +11,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
   const [adminData, setAdminData] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
@@ -79,8 +82,37 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleEditClick = (user) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setIsEditModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleEditSave = async (editedUser) => {
+    try {
+      await axios.put(`http://localhost:5555/api/customers/${editedUser.C_ID}`, editedUser);
+      enqueueSnackbar('User updated successfully', { variant: 'success' });
+      setIsEditModalOpen(false);
+      fetchUsers(); // Refresh the users list
+    } catch (error) {
+      enqueueSnackbar('Failed to update user', { variant: 'error' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      {isEditModalOpen && selectedUser && (
+        <EditUser 
+          user={selectedUser}
+          onClose={handleEditClose}
+          onSave={handleEditSave}
+        />
+      )}
+      
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -214,6 +246,12 @@ const AdminDashboard = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phoneNo}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
+                          <button 
+                            onClick={() => handleEditClick(user)}
+                            className="text-purple-600 hover:text-purple-900"
+                          >
+                            <FaEdit />
+                          </button>
                           <button 
                             onClick={() => handleDeleteUser(user.C_ID)}
                             className="text-red-600 hover:text-red-900"
