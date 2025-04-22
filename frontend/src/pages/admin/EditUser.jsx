@@ -86,7 +86,7 @@ const EditUser = ({ user, onClose, onSave }) => {
             </div>
           </div>
           
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Email
             </label>
@@ -103,7 +103,7 @@ const EditUser = ({ user, onClose, onSave }) => {
                 className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
-          </div>
+          </div> */}
           
           <div className="mb-6">
             <label htmlFor="phoneNo" className="block text-sm font-medium text-gray-700 mb-1">

@@ -14,6 +14,7 @@ import EventView from './pages/admin/EventView';
 import EventEdit from './pages/admin/EventEdit';
 import PackageCreate from './pages/admin/PackageCreate';
 import PaymentsList from './pages/admin/PaymentsList';
+import UsersList from './pages/admin/UsersList'; // Add this import
 // Import customer pages
 import EventsList from './pages/customer/EventsList';
 import EventDetails from './pages/customer/EventDetails';
@@ -44,6 +45,7 @@ const App = () => {
           <Route path='/admin/events/edit/:eventId' element={<EventEdit />} />
           <Route path='/admin/events/:eventId/packages/create' element={<PackageCreate />} />
           <Route path='/admin/payments' element={<PaymentsList />} />
+          <Route path='/admin/users' element={<UsersList />} /> {/* Add this new route */}
           {/* New customer-facing routes */}
           <Route path='/events' element={<EventsList />} />
           <Route path='/events/:eventId' element={<EventDetails />} />

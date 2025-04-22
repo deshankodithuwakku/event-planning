@@ -134,6 +134,12 @@ const AdminDashboard = () => {
             >
               <FaCreditCard className="mr-2" /> View Payments
             </Link>
+            <Link
+              to="/admin/users"
+              className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+            >
+              <FaUsers className="mr-2" /> View Users
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
@@ -208,65 +214,7 @@ const AdminDashboard = () => {
           )}
         </div>
 
-        {/* Users Section */}
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-800">Manage Users</h2>
-            <div className="flex items-center text-purple-600">
-              <FaUsers className="mr-2" /> {users.length} Users
-            </div>
-          </div>
-          
-          {usersLoading ? (
-            <div className="p-6 text-center">Loading users...</div>
-          ) : users.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
-              No users found.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user) => (
-                    <tr key={user._id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.C_ID}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.firstName} {user.lastName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phoneNo}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button 
-                            onClick={() => handleEditClick(user)}
-                            className="text-purple-600 hover:text-purple-900"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteUser(user.C_ID)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {/* The users section is now moved to its own page */}
       </div>
     </div>
   );

@@ -129,3 +129,23 @@
 .cancel-btn:hover {
   background-color: #4b5563;
 }
+
+.rating-display {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.rating-text {
+  font-size: 0.8rem;
+  color: #666;
+}

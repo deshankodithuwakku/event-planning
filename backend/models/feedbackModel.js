@@ -8,6 +8,17 @@ const feedbackSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  customerId: {
+    type: String,
+    required: true
+  },
+  rating: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5,
+    default: 5
   }
 });
 

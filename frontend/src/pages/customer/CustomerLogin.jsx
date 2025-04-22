@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
 import { FaUserAlt, FaLock } from 'react-icons/fa';
@@ -11,7 +11,6 @@ const CustomerLogin = () => {
   });
   const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
-  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -40,7 +39,8 @@ const CustomerLogin = () => {
         localStorage.setItem('customerData', JSON.stringify(response.data.customer));
         
         enqueueSnackbar('Login successful!', { variant: 'success' });
-        navigate('/');
+        // Replace navigate with window.location.href to force a full page reload
+        window.location.href = '/';
       }
     } catch (error) {
       enqueueSnackbar(

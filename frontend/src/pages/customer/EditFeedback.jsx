@@ -2,18 +2,32 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaArrowLeft, FaSave } from 'react-icons/fa';
+import { FaArrowLeft, FaSave, FaStar } from 'react-icons/fa';
 
 const EditFeedback = () => {
   const [feedback, setFeedback] = useState(null);
   const [message, setMessage] = useState('');
+  const [rating, setRating] = useState(5);
+  const [hover, setHover] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const { feedbackId } = useParams();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
+    // Check authentication
+    const customerData = localStorage.getItem('customerData');
+    if (!customerData) {
+      enqueueSnackbar('Please login to edit feedback', { variant: 'error' });
+      navigate('/customer/login');
+      return;
+    }
+    
+    const { C_ID } = JSON.parse(customerData);
+    setCurrentUserId(C_ID);
+    
     const fetchFeedback = async () => {
       try {
         setLoading(true);
@@ -21,12 +35,21 @@ const EditFeedback = () => {
         const response = await axios.get(`http://localhost:5555/api/feedback/${feedbackId}`);
         
         if (response.data) {
-          setFeedback(response.data);
-          setMessage(response.data.message);
+          const fetchedFeedback = response.data;
+          
+          // Check if user owns this feedback
+          if (fetchedFeedback.customerId !== C_ID) {
+            throw new Error('You can only edit your own feedback');
+          }
+          
+          setFeedback(fetchedFeedback);
+          setMessage(fetchedFeedback.message);
+          setRating(fetchedFeedback.rating || 5);
         }
       } catch (error) {
         console.error('Error fetching feedback:', error);
         const errorMsg = error.response?.data?.message || 
+                        error.message ||
                         error.response?.status === 404 ? 'Feedback not found' :
                         'Failed to fetch feedback';
         setError(errorMsg);
@@ -57,7 +80,9 @@ const EditFeedback = () => {
       }
       
       const response = await axios.put(`http://localhost:5555/api/feedback/${feedbackId}`, {
-        message: message.trim()
+        message: message.trim(),
+        customerId: currentUserId,
+        rating
       });
 
       if (response.data.status === 'success') {
@@ -97,10 +122,41 @@ const EditFeedback = () => {
       >
         <FaArrowLeft className="mr-2" /> Back to Feedbacks
       </button>
-
+      
       <div className="bg-white shadow-md rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-6">Edit Feedback</h2>
         <form onSubmit={handleSubmit}>
+          <div className="mb-6">
+            <label className="block text-gray-700 mb-2">Rating</label>
+            <div className="flex">
+              {[...Array(5)].map((star, index) => {
+                const ratingValue = index + 1;
+                
+                return (
+                  <label key={index}>
+                    <input 
+                      type="radio" 
+                      name="rating" 
+                      value={ratingValue}
+                      checked={ratingValue === rating} 
+                      onChange={() => setRating(ratingValue)}
+                      className="hidden"
+                    />
+                    <FaStar 
+                      className="cursor-pointer"
+                      color={ratingValue <= (hover || rating) ? "#ffc107" : "#e4e5e9"} 
+                      size={30} 
+                      style={{ marginRight: '5px' }}
+                      onMouseEnter={() => setHover(ratingValue)}
+                      onMouseLeave={() => setHover(0)}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+            <p className="text-sm text-gray-600 mt-2">Selected Rating: {rating} of 5</p>
+          </div>
+          
           <div className="mb-4">
             <label className="block text-gray-700 mb-2">Message</label>
             <textarea
