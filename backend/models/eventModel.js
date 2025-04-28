@@ -14,6 +14,19 @@ const eventSchema = mongoose.Schema(
     E_description: {
       type: String,
       required: true,
+    },
+    location: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      required: true,
+      default: 'active',
+    },
+    date: {
+      type: Date,
+      required: true,
     }
   },
   {

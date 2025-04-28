@@ -7,6 +7,10 @@ const PortalPaymentSchema = new Schema({
   p_description: {
     type: String,
     required: true
+  },
+  reference: {
+    type: String,
+    required: true
   }
 });
 

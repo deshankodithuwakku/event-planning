@@ -43,6 +43,9 @@ router.post('/', async (request, response) => {
       E_ID: request.body.E_ID,
       E_name: request.body.E_name,
       E_description: request.body.E_description,
+      location: request.body.location,
+      status: request.body.status,
+      date: request.body.date
     };
 
     const event = await Event.create(newEvent);

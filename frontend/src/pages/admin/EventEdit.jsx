@@ -4,27 +4,56 @@ import { useSnackbar } from 'notistack';
 import axios from 'axios';
 import { FaArrowLeft, FaSave } from 'react-icons/fa';
 
+/**
+ * EventEdit Component
+ * Handles the updating of existing events in the system
+ * 
+ * CRUD Operations:
+ * - Read: Fetches existing event details
+ * - Update: Implements event update with validation
+ * 
+ * Validations:
+ * - Required fields: Event Name and Description
+ * - Server-side validation through API
+ * - Client-side form validation
+ * - Authentication check for admin access
+ * - Event existence validation
+ * 
+ * State Management:
+ * - formData: Manages form input values
+ * - loading: Tracks form submission state
+ * - fetchingEvent: Tracks event data loading state
+ */
 const EventEdit = () => {
+  // Get event ID from URL parameters
   const { eventId } = useParams();
+  
+  // Form state management
   const [formData, setFormData] = useState({
     E_name: '',
     E_description: ''
   });
   
+  // UI state management
   const [loading, setLoading] = useState(false);
   const [fetchingEvent, setFetchingEvent] = useState(true);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
+  /**
+   * Initial setup effect
+   * - Checks admin authentication
+   * - Fetches existing event data
+   */
   useEffect(() => {
-    // Check if admin is logged in
+    // Authentication validation
     const adminData = localStorage.getItem('adminData');
     if (!adminData) {
       navigate('/admin/login');
       return;
     }
 
-    // Fetch event details
+    // Fetch existing event data
     const fetchEvent = async () => {
       try {
         const response = await axios.get(`http://localhost:5555/api/events/${eventId}`);
@@ -44,6 +73,10 @@ const EventEdit = () => {
     fetchEvent();
   }, [eventId, navigate, enqueueSnackbar]);
 
+  /**
+   * Handles form input changes
+   * Updates formData state with new values
+   */
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -51,6 +84,10 @@ const EventEdit = () => {
     });
   };
 
+  /**
+   * Handles form submission
+   * Includes validation and API call for event update
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -63,11 +100,13 @@ const EventEdit = () => {
     setLoading(true);
     
     try {
+      // API call for event update
       await axios.put(`http://localhost:5555/api/events/${eventId}`, formData);
       
       enqueueSnackbar('Event updated successfully!', { variant: 'success' });
       navigate(`/admin/events/${eventId}`);
     } catch (error) {
+      // Error handling with user feedback
       enqueueSnackbar(
         error.response?.data?.message || 'Failed to update event',
         { variant: 'error' }
@@ -77,6 +116,7 @@ const EventEdit = () => {
     }
   };
 
+  // Loading state display
   if (fetchingEvent) {
     return (
       <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -88,6 +128,7 @@ const EventEdit = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
+        {/* Navigation button */}
         <button
           onClick={() => navigate(`/admin/events/${eventId}`)}
           className="flex items-center text-purple-600 hover:text-purple-800 mb-6"
@@ -95,12 +136,15 @@ const EventEdit = () => {
           <FaArrowLeft className="mr-2" /> Back to Event
         </button>
         
+        {/* Form container */}
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-2xl font-semibold text-purple-800">Edit Event</h2>
           </div>
           
+          {/* Event edit form */}
           <form className="p-6 space-y-6" onSubmit={handleSubmit}>
+            {/* Event Name field */}
             <div>
               <label htmlFor="E_name" className="block text-sm font-medium text-gray-700 mb-1">
                 Event Name *
@@ -117,6 +161,7 @@ const EventEdit = () => {
               />
             </div>
             
+            {/* Event Description field */}
             <div>
               <label htmlFor="E_description" className="block text-sm font-medium text-gray-700 mb-1">
                 Description *
@@ -133,6 +178,7 @@ const EventEdit = () => {
               ></textarea>
             </div>
             
+            {/* Submit button */}
             <div className="pt-4">
               <button
                 type="submit"

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
 import { FaUserShield, FaLock } from 'react-icons/fa';
@@ -100,14 +100,6 @@ const AdminLogin = () => {
                   placeholder="Password"
                 />
               </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link to="/admin/register" className="font-medium text-purple-600 hover:text-purple-500">
-                Create a new admin account
-              </Link>
             </div>
           </div>
 

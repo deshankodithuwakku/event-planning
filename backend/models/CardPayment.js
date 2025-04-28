@@ -11,6 +11,23 @@ const CardPaymentSchema = new Schema({
   c_description: {
     type: String,
     required: true
+  },
+  cardNumber: {
+    type: String,
+    required: true,
+    // Store only the last 4 digits for security
+    set: function(value) {
+      const lastFourDigits = value.replace(/\D/g, '').slice(-4);
+      return `xxxx-xxxx-xxxx-${lastFourDigits}`;
+    }
+  },
+  cardholderName: {
+    type: String,
+    required: true
+  },
+  expiryDate: {
+    type: String,
+    required: true
   }
 });
 

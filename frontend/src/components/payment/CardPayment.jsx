@@ -111,11 +111,15 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
     setLoading(true);
     
     try {
-      // Send payment data to backend
+      // Send payment data to backend with card details
       const response = await axios.post('http://localhost:5555/api/payments/card', {
         p_amount: amount,
         c_type: 'Credit Card',
-        c_description: `Payment for event ${eventId}, package ${packageId}`
+        c_description: `Payment for event ${eventId}, package ${packageId}`,
+        cardNumber: formData.cardNumber,
+        cardholderName: formData.cardName,
+        expiryDate: formData.expiryDate
+        // Note: CVV is not stored for security
       });
       
       enqueueSnackbar('Payment processed successfully!', { variant: 'success' });
@@ -123,11 +127,12 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
       // Navigate to success page with payment details
       navigate('/payment/success', { 
         state: { 
-          paymentId: response.data._id,
+          paymentId: response.data.P_ID,
           amount,
           eventId,
           packageId,
-          paymentMethod: 'Credit Card'
+          paymentMethod: 'Credit Card',
+          cardLast4: formData.cardNumber.replace(/\D/g, '').slice(-4)
         } 
       });
     } catch (error) {

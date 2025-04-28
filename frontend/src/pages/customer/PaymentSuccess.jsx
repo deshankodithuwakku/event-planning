@@ -52,6 +52,18 @@ const PaymentSuccess = () => {
                 <span className="font-medium">{paymentDetails.paymentMethod}</span>
               </div>
             )}
+            {paymentDetails.paymentMethod === 'Credit Card' && paymentDetails.cardLast4 && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Card:</span>
+                <span className="font-medium">xxxx-xxxx-xxxx-{paymentDetails.cardLast4}</span>
+              </div>
+            )}
+            {paymentDetails.paymentMethod === 'Payment Portal' && paymentDetails.reference && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Reference Number:</span>
+                <span className="font-medium">{paymentDetails.reference}</span>
+              </div>
+            )}
           </div>
         </div>
 

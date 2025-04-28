@@ -27,7 +27,7 @@ async function generatePaymentId() {
 router.post('/portal', async (req, res) => {
   try {
     // Extract from body
-    const { p_amount, p_description } = req.body;
+    const { p_amount, p_description, reference } = req.body;
 
     // Generate a unique payment ID
     const P_ID = await generatePaymentId();
@@ -36,7 +36,8 @@ router.post('/portal', async (req, res) => {
     const newPortalPayment = new PortalPayment({
       P_ID,
       p_amount,
-      p_description
+      p_description,
+      reference
     });
     const savedPayment = await newPortalPayment.save();
     res.json(savedPayment);
@@ -48,7 +49,7 @@ router.post('/portal', async (req, res) => {
 // Create a Card Payment
 router.post('/card', async (req, res) => {
   try {
-    const { p_amount, c_type, c_description } = req.body;
+    const { p_amount, c_type, c_description, cardNumber, cardholderName, expiryDate } = req.body;
     
     // Generate a unique payment ID
     const P_ID = await generatePaymentId();
@@ -57,7 +58,10 @@ router.post('/card', async (req, res) => {
       P_ID,
       p_amount,
       c_type,
-      c_description
+      c_description,
+      cardNumber,
+      cardholderName,
+      expiryDate
     });
     const savedPayment = await newCardPayment.save();
     res.json(savedPayment);

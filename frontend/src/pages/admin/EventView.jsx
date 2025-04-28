@@ -4,16 +4,41 @@ import { useSnackbar } from 'notistack';
 import axios from 'axios';
 import { FaArrowLeft, FaEdit, FaPlus } from 'react-icons/fa';
 
+/**
+ * EventView Component
+ * Handles the viewing of event details and associated packages
+ * 
+ * CRUD Operations:
+ * - Read: Fetches and displays event details and packages
+ * 
+ * Validations:
+ * - Authentication check for admin access
+ * - Event existence validation
+ * - Error handling for failed API calls
+ * 
+ * State Management:
+ * - event: Stores event details
+ * - packages: Stores associated packages
+ * - loading: Tracks data loading state
+ */
 const EventView = () => {
+  // Get event ID from URL parameters
   const { eventId } = useParams();
+  
+  // State management for event data
   const [event, setEvent] = useState(null);
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
+  /**
+   * Initial setup effect
+   * - Checks admin authentication
+   * - Fetches event and package data
+   */
   useEffect(() => {
-    // Check if admin is logged in
+    // Authentication validation
     const adminData = localStorage.getItem('adminData');
     if (!adminData) {
       navigate('/admin/login');
@@ -23,12 +48,17 @@ const EventView = () => {
     fetchEventDetails();
   }, [eventId, navigate]);
 
+  /**
+   * Fetches event details and associated packages
+   * Handles error cases and loading states
+   */
   const fetchEventDetails = async () => {
     try {
+      // Fetch event details
       const eventResponse = await axios.get(`http://localhost:5555/api/events/${eventId}`);
       setEvent(eventResponse.data);
       
-      // Fetch packages for this event
+      // Fetch associated packages
       const packagesResponse = await axios.get(`http://localhost:5555/api/packages/event/${eventId}`);
       setPackages(packagesResponse.data.data);
     } catch (error) {
@@ -38,6 +68,7 @@ const EventView = () => {
     }
   };
 
+  // Loading state display
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -46,6 +77,7 @@ const EventView = () => {
     );
   }
 
+  // Event not found display
   if (!event) {
     return (
       <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -67,6 +99,7 @@ const EventView = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
+        {/* Navigation button */}
         <button
           onClick={() => navigate('/admin/dashboard')}
           className="flex items-center text-purple-600 hover:text-purple-800 mb-6"
@@ -74,6 +107,7 @@ const EventView = () => {
           <FaArrowLeft className="mr-2" /> Back to Dashboard
         </button>
         
+        {/* Event details section */}
         <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
           <div className="p-6 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-2xl font-semibold text-purple-800">Event Details</h2>
@@ -96,6 +130,7 @@ const EventView = () => {
           </div>
         </div>
         
+        {/* Packages section */}
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-xl font-semibold text-gray-800">Packages</h2>
@@ -107,6 +142,7 @@ const EventView = () => {
             </Link>
           </div>
           
+          {/* Packages list or empty state */}
           {packages.length === 0 ? (
             <div className="p-6 text-center text-gray-500">
               No packages have been created for this event yet.

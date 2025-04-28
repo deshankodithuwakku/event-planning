@@ -54,21 +54,23 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
     setLoading(true);
     
     try {
-      // Send payment data to backend
+      // Send payment data to backend including reference number
       const response = await axios.post('http://localhost:5555/api/payments/portal', {
         p_amount: amount,
-        p_description: formData.description
+        p_description: formData.description,
+        reference: formData.reference
       });
       
       enqueueSnackbar('Payment processed successfully!', { variant: 'success' });
       
       navigate('/payment/success', { 
         state: { 
-          paymentId: response.data._id,
+          paymentId: response.data.P_ID,
           amount,
           eventId,
           packageId,
-          paymentMethod: 'Payment Portal'
+          paymentMethod: 'Payment Portal',
+          reference: formData.reference
         } 
       });
     } catch (error) {

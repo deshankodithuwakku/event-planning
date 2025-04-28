@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FaArrowLeft } from 'react-icons/fa';
+import { useSnackbar } from 'notistack';
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -10,6 +11,7 @@ const EventDetails = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     const fetchEventDetails = async () => {
@@ -36,10 +38,19 @@ const EventDetails = () => {
   };
 
   const handleProceedToBooking = () => {
-    if (!selectedPackage) {
-      alert('Please select a package first');
+    // Check if user is logged in
+    const customerData = localStorage.getItem('customerData');
+    if (!customerData) {
+      enqueueSnackbar('Please login to proceed with booking', { variant: 'error' });
+      navigate('/customer/login');
       return;
     }
+
+    if (!selectedPackage) {
+      enqueueSnackbar('Please select a package first', { variant: 'error' });
+      return;
+    }
+    
     // Navigate to payment page with event and package details
     navigate('/payment', { 
       state: { 
