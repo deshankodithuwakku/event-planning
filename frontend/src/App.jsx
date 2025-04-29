@@ -8,6 +8,7 @@ import CustomerRegister from './pages/customer/CustomerRegister';
 import CustomerProfile from './pages/customer/CustomerProfile';
 import CustomerProfileEdit from './pages/customer/CustomerProfileEdit';
 import MyEvents from './pages/customer/MyEvents';
+import MyPayments from './pages/customer/MyPayments'; // Make sure this import is present
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import EventCreate from './pages/admin/EventCreate';
@@ -56,6 +57,7 @@ const App = () => {
           <Route path='/customer/profile' element={<CustomerProfile />} />
           <Route path='/customer/profile/edit' element={<CustomerProfileEdit />} />
           <Route path='/customer/my-events' element={<MyEvents />} />
+          <Route path='/customer/payments' element={<MyPayments />} />
           
           {/* Admin authentication routes */}
           <Route path='/admin/login' element={<AdminLogin />} />

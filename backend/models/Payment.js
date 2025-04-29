@@ -75,6 +75,10 @@ export const PortalPayment = Payment.discriminator('Portal', new Schema({
   reference: {
     type: String,
     required: true
+  },
+  bankSlipUrl: {
+    type: String,
+    required: true
   }
 }));
 

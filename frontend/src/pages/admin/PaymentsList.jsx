@@ -4,6 +4,7 @@ import { useSnackbar } from 'notistack';
 import axios from 'axios';
 import { FaArrowLeft, FaCreditCard, FaWallet, FaFilter, FaEdit, FaTrash } from 'react-icons/fa';
 import EditPayment from './EditPayment';
+import { getImageUrl } from '../../utils/urlHelper';
 
 const PaymentsList = () => {
   const [payments, setPayments] = useState([]);
@@ -145,6 +146,7 @@ const PaymentsList = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank Slip</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -168,6 +170,22 @@ const PaymentsList = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                         {payment.paymentType === 'Card' ? payment.c_description : payment.p_description}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {payment.paymentType === 'Portal' && payment.bankSlipUrl && (
+                          <a 
+                            href={getImageUrl(payment.bankSlipUrl)}
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-purple-600 hover:text-purple-900"
+                          >
+                            <img 
+                              src={getImageUrl(payment.bankSlipUrl)} 
+                              alt="Bank slip" 
+                              className="w-12 h-12 object-cover rounded border border-gray-300"
+                            />
+                          </a>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-3">

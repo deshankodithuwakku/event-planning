@@ -11,6 +11,7 @@ import {
   FaUndoAlt,
   FaArrowLeft
 } from 'react-icons/fa';
+import { getImageUrl } from '../../utils/urlHelper';
 
 const MyEvents = () => {
   const [events, setEvents] = useState([]);
@@ -187,6 +188,25 @@ const MyEvents = () => {
                           <p className="text-sm text-blue-800">
                             <span className="font-medium">Reference Number:</span> {item.payment.reference}
                           </p>
+                          {item.payment.paymentType === 'Portal' && item.payment.bankSlipUrl && (
+                            <div className="mt-2">
+                              <p className="text-sm text-blue-800 mb-1">
+                                <span className="font-medium">Payment Proof:</span>
+                              </p>
+                              <a 
+                                href={getImageUrl(item.payment.bankSlipUrl)} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="inline-block"
+                              >
+                                <img 
+                                  src={getImageUrl(item.payment.bankSlipUrl)} 
+                                  alt="Bank slip" 
+                                  className="max-h-24 rounded-md border border-gray-300 hover:border-sky-500 transition"
+                                />
+                              </a>
+                            </div>
+                          )}
                         </div>
                       )}
                       

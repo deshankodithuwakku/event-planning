@@ -66,6 +66,7 @@ router.get('/:customerId/events', async (req, res) => {
             paymentType: payment.paymentType,
             description: payment.paymentType === 'Card' ? payment.c_description : payment.p_description,
             reference: payment.paymentType === 'Portal' ? payment.reference : null,
+            bankSlipUrl: payment.paymentType === 'Portal' ? payment.bankSlipUrl : null,
             cardDetails: payment.paymentType === 'Card' ? {
               cardNumber: payment.cardNumber,
               cardholderName: payment.cardholderName

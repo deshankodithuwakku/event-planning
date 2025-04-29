@@ -11,6 +11,10 @@ const PortalPaymentSchema = new Schema({
   reference: {
     type: String,
     required: true
+  },
+  bankSlipUrl: {
+    type: String,
+    required: true
   }
 });
 

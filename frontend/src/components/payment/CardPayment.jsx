@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useSnackbar } from 'notistack';
-import { FaCreditCard, FaUser, FaCalendarAlt, FaLock } from 'react-icons/fa';
+import { FaCreditCard, FaUser, FaCalendarAlt, FaLock, FaIdCard } from 'react-icons/fa';
 
 const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
   const navigate = useNavigate();
@@ -12,7 +12,8 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
     cardNumber: '',
     cardName: '',
     expiryDate: '',
-    cvv: ''
+    cvv: '',
+    cardType: 'credit' // Default to credit card
   });
   // Add error state for real-time validation
   const [errors, setErrors] = useState({
@@ -122,21 +123,10 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
       const customer = JSON.parse(customerData);
       const customerId = customer.C_ID;
       
-      console.log('Sending payment with data:', {
-        customerId,
-        eventId,
-        packageId,
-        p_amount: amount,
-        cardDetails: {
-          cardNumber: formData.cardNumber.replace(/\s/g, ''),
-          cardholderName: formData.cardName
-        }
-      });
-      
       // Send payment data to backend with card details
       const response = await axios.post('http://localhost:5555/api/payments/card', {
         p_amount: amount,
-        c_type: 'Credit Card',
+        c_type: formData.cardType === 'credit' ? 'Credit Card' : 'Debit Card',
         c_description: `Payment for event ${eventId}, package ${packageId}`,
         cardNumber: formData.cardNumber.replace(/\s/g, ''),
         cardholderName: formData.cardName,
@@ -155,7 +145,7 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
           amount,
           eventId,
           packageId,
-          paymentMethod: 'Credit Card',
+          paymentMethod: formData.cardType === 'credit' ? 'Credit Card' : 'Debit Card',
           cardLast4: formData.cardNumber.replace(/\D/g, '').slice(-4)
         } 
       });
@@ -211,8 +201,40 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-sky-700 mb-4">Credit Card Payment</h2>
+      <h2 className="text-lg font-semibold text-sky-700 mb-4">Card Payment</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Card Type
+          </label>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, cardType: 'credit' }))}
+              className={`flex items-center justify-center p-3 rounded-md ${
+                formData.cardType === 'credit' 
+                  ? 'bg-sky-100 border-2 border-sky-500' 
+                  : 'border border-gray-300'
+              }`}
+            >
+              <FaCreditCard className={`mr-2 ${formData.cardType === 'credit' ? 'text-sky-600' : 'text-gray-500'}`} />
+              <span className={formData.cardType === 'credit' ? 'font-medium text-sky-700' : ''}>Credit Card</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, cardType: 'debit' }))}
+              className={`flex items-center justify-center p-3 rounded-md ${
+                formData.cardType === 'debit' 
+                  ? 'bg-sky-100 border-2 border-sky-500' 
+                  : 'border border-gray-300'
+              }`}
+            >
+              <FaIdCard className={`mr-2 ${formData.cardType === 'debit' ? 'text-sky-600' : 'text-gray-500'}`} />
+              <span className={formData.cardType === 'debit' ? 'font-medium text-sky-700' : ''}>Debit Card</span>
+            </button>
+          </div>
+        </div>
+
         <div>
           <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">
             Card Number

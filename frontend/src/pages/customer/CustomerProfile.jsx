@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaUser, FaEdit, FaPhone, FaSignOutAlt, FaArrowLeft, FaCalendarAlt } from 'react-icons/fa';
+import { FaUser, FaEdit, FaPhone, FaSignOutAlt, FaArrowLeft, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa';
 
 const CustomerProfile = () => {
   const [profile, setProfile] = useState(null);
@@ -139,6 +139,13 @@ const CustomerProfile = () => {
                   <span className="font-medium">My Events</span>
                 </div>
                 <span>→</span>
+              </Link>
+              <Link 
+                to="/customer/payments" 
+                className="flex items-center p-3 text-base font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 group rounded-md"
+              >
+                <FaMoneyBillWave className="text-sky-600 mr-3" />
+                My Payments
               </Link>
             </div>
           </div>

@@ -8,22 +8,31 @@ const router = express.Router();
 // Helper function to generate a unique payment ID
 async function generatePaymentId() {
   try {
-    const lastPayment = await Payment.findOne().sort({ P_ID: -1 });
-    let newId;
+    // Get current timestamp for uniqueness
+    const timestamp = Date.now();
+    const randomComponent = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     
-    if (lastPayment) {
+    // Try to find the last payment to maintain sequence if possible
+    const lastPayment = await Payment.findOne().sort({ createdAt: -1 });
+    
+    if (lastPayment && lastPayment.P_ID) {
       // Extract the number part and increment it
-      const lastIdNum = parseInt(lastPayment.P_ID.replace('PAY', ''));
-      newId = `PAY${(lastIdNum + 1).toString().padStart(3, '0')}`;
-    } else {
-      // If no payments exist, start with PAY001
-      newId = 'PAY001';
+      const matches = lastPayment.P_ID.match(/PAY(\d+)/);
+      const lastIdNum = matches && matches[1] ? parseInt(matches[1], 10) : 0;
+      
+      if (!isNaN(lastIdNum)) {
+        // Combine sequential number with random component
+        const nextNum = lastIdNum + 1;
+        return `PAY${nextNum}${randomComponent}`;
+      }
     }
     
-    return newId;
+    // Default to timestamp-based ID if no valid previous ID or as fallback
+    return `PAY${timestamp.toString().slice(-6)}${randomComponent}`;
   } catch (error) {
     console.error('Error generating payment ID:', error);
-    throw error;
+    // Fallback to guaranteed unique timestamp-based ID
+    return `PAY${Date.now().toString().slice(-9)}`;
   }
 }
 
@@ -31,13 +40,23 @@ async function generatePaymentId() {
 router.post('/portal', async (req, res) => {
   try {
     // Extract from body
-    const { p_amount, p_description, reference, customerId, eventId, packageId } = req.body;
+    const { p_amount, p_description, reference, bankSlipUrl, customerId, eventId, packageId } = req.body;
     
-    // Validate the required fields
+    // Log the received data to debug
+    console.log('Received payment data:', { p_amount, p_description, reference, bankSlipUrl, customerId, eventId, packageId });
+
+    // Validate the required fields with explicit checks for bankSlipUrl
     if (!p_amount || !reference || !customerId || !eventId || !packageId) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         required: 'p_amount, reference, customerId, eventId, packageId' 
+      });
+    }
+
+    if (!bankSlipUrl) {
+      return res.status(400).json({ 
+        error: 'Bank slip URL is required but was not provided',
+        received: req.body 
       });
     }
     
@@ -53,22 +72,48 @@ router.post('/portal', async (req, res) => {
       return res.status(404).json({ error: `Package with ID ${packageId} not found` });
     }
 
-    // Generate a unique payment ID
-    const P_ID = await generatePaymentId();
-
-    // Create new PortalPayment
-    const newPortalPayment = new PortalPayment({
-      P_ID,
-      p_amount,
-      p_description,
-      reference,
-      customerId,
-      eventId,
-      packageId,
-      status: 'confirmed'
-    });
+    let savedPayment = null;
+    let retryCount = 0;
+    const maxRetries = 3;
     
-    const savedPayment = await newPortalPayment.save();
+    // Retry logic for handling potential ID conflicts
+    while (!savedPayment && retryCount < maxRetries) {
+      try {
+        // Generate a unique payment ID with timestamp and random component
+        const timestamp = Date.now();
+        const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        const P_ID = `PAY${timestamp.toString().slice(-6)}${randomPart}`;
+        
+        console.log(`Attempting to create payment with ID: ${P_ID} (Attempt ${retryCount + 1})`);
+        console.log(`Bank slip URL being saved: ${bankSlipUrl}`);
+
+        // Create new PortalPayment with explicit bankSlipUrl
+        const newPortalPayment = new PortalPayment({
+          P_ID,
+          p_amount,
+          p_description,
+          reference,
+          bankSlipUrl,  // Make sure this is properly assigned
+          customerId,
+          eventId,
+          packageId,
+          status: 'confirmed'
+        });
+        
+        savedPayment = await newPortalPayment.save();
+        console.log('Payment saved successfully with ID:', P_ID);
+      } catch (saveError) {
+        console.error('Save error:', saveError);
+        retryCount++;
+        if (saveError.code === 11000 && retryCount < maxRetries) {
+          console.log(`Duplicate key error, retrying... (${retryCount}/${maxRetries})`);
+        } else if (retryCount >= maxRetries) {
+          throw new Error(`Failed to create payment after ${maxRetries} attempts: ${saveError.message}`);
+        } else {
+          throw saveError;
+        }
+      }
+    }
     
     res.status(201).json({
       message: 'Portal payment created successfully',
@@ -109,24 +154,43 @@ router.post('/card', async (req, res) => {
       return res.status(404).json({ error: `Package with ID ${packageId} not found` });
     }
     
-    // Generate a unique payment ID
-    const P_ID = await generatePaymentId();
+    let savedPayment = null;
+    let retryCount = 0;
+    const maxRetries = 3;
     
-    const newCardPayment = new CardPayment({
-      P_ID,
-      p_amount,
-      c_type,
-      c_description,
-      cardNumber,
-      cardholderName,
-      expiryDate,
-      customerId,
-      eventId,
-      packageId,
-      status: 'confirmed'
-    });
-    
-    const savedPayment = await newCardPayment.save();
+    // Retry logic for handling potential ID conflicts
+    while (!savedPayment && retryCount < maxRetries) {
+      try {
+        // Generate a unique payment ID
+        const P_ID = await generatePaymentId();
+        console.log(`Attempting to create card payment with ID: ${P_ID} (Attempt ${retryCount + 1})`);
+        
+        const newCardPayment = new CardPayment({
+          P_ID,
+          p_amount,
+          c_type,
+          c_description,
+          cardNumber,
+          cardholderName,
+          expiryDate,
+          customerId,
+          eventId,
+          packageId,
+          status: 'confirmed'
+        });
+        
+        savedPayment = await newCardPayment.save();
+      } catch (saveError) {
+        retryCount++;
+        if (saveError.code === 11000 && retryCount < maxRetries) {
+          console.log(`Duplicate key error, retrying... (${retryCount}/${maxRetries})`);
+        } else if (retryCount >= maxRetries) {
+          throw new Error(`Failed to create payment after ${maxRetries} attempts: ${saveError.message}`);
+        } else {
+          throw saveError;
+        }
+      }
+    }
     
     res.status(201).json({
       message: 'Card payment created successfully',
@@ -170,8 +234,80 @@ router.get('/card', async (req, res) => {
 router.get('/customer/:customerId', async (req, res) => {
   try {
     const { customerId } = req.params;
+    console.log(`Fetching payments for customer with ID: ${customerId}`);
+    
+    if (!customerId) {
+      return res.status(400).json({ error: 'Customer ID is required' });
+    }
+    
     const payments = await Payment.find({ customerId });
-    res.json(payments);
+    console.log(`Found ${payments.length} payments for customer ${customerId}`);
+    
+    // Return the payments
+    res.status(200).json(payments);
+  } catch (error) {
+    console.error('Error fetching customer payments:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get payments for the logged-in customer
+router.get('/customer/my-payments', async (req, res) => {
+  try {
+    // Get customer ID from query params
+    const { customerId } = req.query;
+    
+    if (!customerId) {
+      return res.status(400).json({ error: 'Customer ID is required' });
+    }
+    
+    console.log(`Fetching payments for customer ID: ${customerId}`);
+    
+    const payments = await Payment.find({ customerId });
+    console.log(`Found ${payments.length} payments for customer ${customerId}`);
+    
+    res.status(200).json(payments);
+  } catch (error) {
+    console.error('Error fetching customer payments:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Allow customer to cancel their payment
+router.patch('/customer/cancel/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customerId } = req.body;
+    
+    if (!customerId) {
+      return res.status(400).json({ error: 'Customer ID is required' });
+    }
+    
+    // Find the payment and check if it belongs to the customer
+    const payment = await Payment.findById(id);
+    
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+    
+    // Verify ownership
+    if (payment.customerId !== customerId) {
+      return res.status(403).json({ error: 'Unauthorized: This payment does not belong to you' });
+    }
+    
+    // Only allow cancellation if payment status is not already cancelled/refunded
+    if (['cancelled', 'refunded'].includes(payment.status)) {
+      return res.status(400).json({ error: `Payment is already ${payment.status}` });
+    }
+    
+    // Update status
+    payment.status = 'cancelled';
+    await payment.save();
+    
+    res.json({ 
+      message: 'Payment cancelled successfully',
+      payment: payment
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -181,7 +317,9 @@ router.get('/customer/:customerId', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { p_amount, p_description, c_description } = req.body;
+    const { p_amount, p_description, c_description, bankSlipUrl } = req.body;
+    
+    console.log('Update payment request:', req.body);
     
     // Find the payment to determine its type
     const payment = await Payment.findById(id);
@@ -198,9 +336,17 @@ router.put('/:id', async (req, res) => {
       );
       res.json(updatedPayment);
     } else if (payment.paymentType === 'Portal') {
+      const updateFields = { p_amount, p_description };
+      
+      // Only include bankSlipUrl in update if it's explicitly provided in request
+      // This allows both updating and removing the bank slip
+      if (bankSlipUrl !== undefined) {
+        updateFields.bankSlipUrl = bankSlipUrl;
+      }
+      
       const updatedPayment = await PortalPayment.findByIdAndUpdate(
         id,
-        { p_amount, p_description },
+        updateFields,
         { new: true }
       );
       res.json(updatedPayment);
@@ -214,6 +360,7 @@ router.put('/:id', async (req, res) => {
       res.json(updatedPayment);
     }
   } catch (error) {
+    console.error('Error updating payment:', error);
     res.status(500).json({ error: error.message });
   }
 });
