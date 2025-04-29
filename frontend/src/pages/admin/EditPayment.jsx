@@ -197,7 +197,9 @@ const EditPayment = ({ payment, onClose, onSave }) => {
               value={formData.description}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              maxLength="200"
             ></textarea>
+            <p className="mt-1 text-xs text-gray-500">{formData.description?.length || 0}/200 characters</p>
           </div>
           
           {/* Bank slip upload section - only for Portal payments */}

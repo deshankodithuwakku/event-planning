@@ -66,8 +66,8 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
       return false;
     }
 
-    if (formData.description.length > 500) {
-      enqueueSnackbar('Description is too long (maximum 500 characters)', { variant: 'error' });
+    if (formData.description.length > 200) {
+      enqueueSnackbar('Description is too long (maximum 200 characters)', { variant: 'error' });
       return false;
     }
 
@@ -287,9 +287,9 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
             value={formData.description}
             onChange={handleChange}
             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
-            maxLength={500}
+            maxLength={200}
           />
-          <p className="mt-1 text-xs text-gray-500">{formData.description.length}/500 characters</p>
+          <p className="mt-1 text-xs text-gray-500">{formData.description.length}/200 characters</p>
         </div>
 
         <div className="pt-4 flex space-x-3">
