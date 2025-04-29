@@ -14,6 +14,13 @@ const CustomerRegister = () => {
     confirmPassword: '',
     phoneNo: ''
   });
+  
+  const [errors, setErrors] = useState({
+    firstName: '',
+    lastName: '',
+    phoneNo: ''
+  });
+  
   const [loading, setLoading] = useState(false);
   const [fetchingId, setFetchingId] = useState(true);
   const { enqueueSnackbar } = useSnackbar();
@@ -34,20 +41,67 @@ const CustomerRegister = () => {
     fetchCustomerId();
   }, [enqueueSnackbar]);
 
+  const validateFirstName = (name) => {
+    const nameRegex = /^[A-Za-z]+$/;
+    if (!nameRegex.test(name)) {
+      return 'First name should contain letters only';
+    }
+    return '';
+  };
+
+  const validateLastName = (name) => {
+    const nameRegex = /^[A-Za-z]+$/;
+    if (!nameRegex.test(name)) {
+      return 'Last name should contain letters only';
+    }
+    return '';
+  };
+
+  const validatePhoneNumber = (phone) => {
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone)) {
+      return 'Phone number must be exactly 10 digits';
+    }
+    return '';
+  };
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+    
+    if (name === 'firstName' && value) {
+      setErrors(prev => ({...prev, firstName: validateFirstName(value)}));
+    } else if (name === 'lastName' && value) {
+      setErrors(prev => ({...prev, lastName: validateLastName(value)}));
+    } else if (name === 'phoneNo' && value) {
+      setErrors(prev => ({...prev, phoneNo: validatePhoneNumber(value)}));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Form validation
     if (!formData.C_ID || !formData.firstName || !formData.lastName || !formData.userName || 
         !formData.password || !formData.confirmPassword || !formData.phoneNo) {
       enqueueSnackbar('Please fill in all fields', { variant: 'error' });
+      return;
+    }
+    
+    const firstNameError = validateFirstName(formData.firstName);
+    const lastNameError = validateLastName(formData.lastName);
+    const phoneError = validatePhoneNumber(formData.phoneNo);
+    
+    setErrors({
+      firstName: firstNameError,
+      lastName: lastNameError,
+      phoneNo: phoneError
+    });
+    
+    if (firstNameError || lastNameError || phoneError) {
+      enqueueSnackbar('Please fix the highlighted errors', { variant: 'error' });
       return;
     }
     
@@ -59,7 +113,6 @@ const CustomerRegister = () => {
     setLoading(true);
     
     try {
-      // Prepare data for API call (remove confirmPassword)
       const apiData = {
         C_ID: formData.C_ID,
         firstName: formData.firstName,
@@ -116,7 +169,7 @@ const CustomerRegister = () => {
             </div>
             
             <div>
-              <label htmlFor="firstName" className="sr-only">First Name</label>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaUserAlt className="h-5 w-5 text-gray-400" />
@@ -127,14 +180,16 @@ const CustomerRegister = () => {
                   type="text"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                  className={`block w-full pl-10 pr-3 py-3 border ${errors.firstName ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500`}
                   placeholder="First Name"
                 />
               </div>
+              <p className="text-xs mt-1 text-red-500">{errors.firstName}</p>
+              <p className="text-xs mt-1 text-gray-500">Example: <span className="text-sky-600">Johan</span></p>
             </div>
             
             <div>
-              <label htmlFor="lastName" className="sr-only">Last Name</label>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaUserAlt className="h-5 w-5 text-gray-400" />
@@ -145,14 +200,16 @@ const CustomerRegister = () => {
                   type="text"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                  className={`block w-full pl-10 pr-3 py-3 border ${errors.lastName ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500`}
                   placeholder="Last Name"
                 />
               </div>
+              <p className="text-xs mt-1 text-red-500">{errors.lastName}</p>
+              <p className="text-xs mt-1 text-gray-500">Example: <span className="text-sky-600">Smith</span></p>
             </div>
             
             <div>
-              <label htmlFor="userName" className="sr-only">Username</label>
+              <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaUserAlt className="h-5 w-5 text-gray-400" />
@@ -170,7 +227,7 @@ const CustomerRegister = () => {
             </div>
             
             <div>
-              <label htmlFor="password" className="sr-only">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaLock className="h-5 w-5 text-gray-400" />
@@ -188,7 +245,7 @@ const CustomerRegister = () => {
             </div>
             
             <div>
-              <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaLock className="h-5 w-5 text-gray-400" />
@@ -206,7 +263,7 @@ const CustomerRegister = () => {
             </div>
             
             <div>
-              <label htmlFor="phoneNo" className="sr-only">Phone Number</label>
+              <label htmlFor="phoneNo" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaPhone className="h-5 w-5 text-gray-400" />
@@ -217,10 +274,12 @@ const CustomerRegister = () => {
                   type="text"
                   value={formData.phoneNo}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                  className={`block w-full pl-10 pr-3 py-3 border ${errors.phoneNo ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500`}
                   placeholder="Phone Number"
                 />
               </div>
+              <p className="text-xs mt-1 text-red-500">{errors.phoneNo}</p>
+              <p className="text-xs mt-1 text-gray-500">Example: <span className="text-sky-600">0712345678</span> (10 digits)</p>
             </div>
           </div>
 
