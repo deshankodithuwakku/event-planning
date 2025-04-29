@@ -1,0 +1,6 @@
+// Add the new route for My Events
+import MyEvents from './pages/customer/MyEvents';
+
+// ...existing routes...
+<Route path="/customer/my-events" element={<MyEvents />} />
+// ...existing routes...

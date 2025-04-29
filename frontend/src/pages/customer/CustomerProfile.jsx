@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaUser, FaEdit, FaPhone, FaSignOutAlt, FaArrowLeft } from 'react-icons/fa';
+import { FaUser, FaEdit, FaPhone, FaSignOutAlt, FaArrowLeft, FaCalendarAlt } from 'react-icons/fa';
 
 const CustomerProfile = () => {
   const [profile, setProfile] = useState(null);
@@ -120,6 +120,26 @@ const CustomerProfile = () => {
               >
                 Manage Feedback
               </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800">Account Actions</h2>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              <Link 
+                to="/customer/my-events"
+                className="w-full flex items-center justify-between py-3 px-4 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-md transition"
+              >
+                <div className="flex items-center">
+                  <FaCalendarAlt className="mr-3" />
+                  <span className="font-medium">My Events</span>
+                </div>
+                <span>→</span>
+              </Link>
             </div>
           </div>
         </div>

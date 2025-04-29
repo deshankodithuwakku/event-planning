@@ -1,33 +1,57 @@
 import express from 'express';
+import Payment, { CardPayment, PortalPayment } from '../models/Payment.js';
+import { Event } from '../models/eventModel.js';
+import { Package } from '../models/packageModel.js';
+
 const router = express.Router();
 
-import Payment from '../models/Payment.js';
-import PortalPayment from '../models/PortalPayment.js';
-import CardPayment from '../models/CardPayment.js';
-
-// Utility function to generate a unique payment ID
+// Helper function to generate a unique payment ID
 async function generatePaymentId() {
-  // Find the payment with the highest ID
-  const lastPayment = await Payment.findOne().sort({ P_ID: -1 });
-  
-  let newId;
-  if (lastPayment) {
-    // Extract the number part and increment it
-    const lastIdNum = parseInt(lastPayment.P_ID.replace('PMT', ''));
-    newId = `PMT${(lastIdNum + 1).toString().padStart(4, '0')}`;
-  } else {
-    // If no payments exist, start with PMT0001
-    newId = 'PMT0001';
+  try {
+    const lastPayment = await Payment.findOne().sort({ P_ID: -1 });
+    let newId;
+    
+    if (lastPayment) {
+      // Extract the number part and increment it
+      const lastIdNum = parseInt(lastPayment.P_ID.replace('PAY', ''));
+      newId = `PAY${(lastIdNum + 1).toString().padStart(3, '0')}`;
+    } else {
+      // If no payments exist, start with PAY001
+      newId = 'PAY001';
+    }
+    
+    return newId;
+  } catch (error) {
+    console.error('Error generating payment ID:', error);
+    throw error;
   }
-  
-  return newId;
 }
 
 // Create a Portal Payment
 router.post('/portal', async (req, res) => {
   try {
     // Extract from body
-    const { p_amount, p_description, reference } = req.body;
+    const { p_amount, p_description, reference, customerId, eventId, packageId } = req.body;
+    
+    // Validate the required fields
+    if (!p_amount || !reference || !customerId || !eventId || !packageId) {
+      return res.status(400).json({ 
+        error: 'Missing required fields', 
+        required: 'p_amount, reference, customerId, eventId, packageId' 
+      });
+    }
+    
+    // Verify event exists
+    const eventExists = await Event.findOne({ E_ID: eventId });
+    if (!eventExists) {
+      return res.status(404).json({ error: `Event with ID ${eventId} not found` });
+    }
+    
+    // Verify package exists
+    const packageExists = await Package.findOne({ Pg_ID: packageId });
+    if (!packageExists) {
+      return res.status(404).json({ error: `Package with ID ${packageId} not found` });
+    }
 
     // Generate a unique payment ID
     const P_ID = await generatePaymentId();
@@ -37,11 +61,21 @@ router.post('/portal', async (req, res) => {
       P_ID,
       p_amount,
       p_description,
-      reference
+      reference,
+      customerId,
+      eventId,
+      packageId,
+      status: 'confirmed'
     });
+    
     const savedPayment = await newPortalPayment.save();
-    res.json(savedPayment);
+    
+    res.status(201).json({
+      message: 'Portal payment created successfully',
+      payment: savedPayment
+    });
   } catch (error) {
+    console.error('Error creating portal payment:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -49,7 +83,31 @@ router.post('/portal', async (req, res) => {
 // Create a Card Payment
 router.post('/card', async (req, res) => {
   try {
-    const { p_amount, c_type, c_description, cardNumber, cardholderName, expiryDate } = req.body;
+    const { 
+      p_amount, c_type, c_description, cardNumber, cardholderName, 
+      expiryDate, customerId, eventId, packageId 
+    } = req.body;
+    
+    // Validate the required fields
+    if (!p_amount || !c_type || !cardNumber || !cardholderName || 
+        !expiryDate || !customerId || !eventId || !packageId) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        required: 'p_amount, c_type, cardNumber, cardholderName, expiryDate, customerId, eventId, packageId'
+      });
+    }
+    
+    // Verify event exists
+    const eventExists = await Event.findOne({ E_ID: eventId });
+    if (!eventExists) {
+      return res.status(404).json({ error: `Event with ID ${eventId} not found` });
+    }
+    
+    // Verify package exists
+    const packageExists = await Package.findOne({ Pg_ID: packageId });
+    if (!packageExists) {
+      return res.status(404).json({ error: `Package with ID ${packageId} not found` });
+    }
     
     // Generate a unique payment ID
     const P_ID = await generatePaymentId();
@@ -61,15 +119,25 @@ router.post('/card', async (req, res) => {
       c_description,
       cardNumber,
       cardholderName,
-      expiryDate
+      expiryDate,
+      customerId,
+      eventId,
+      packageId,
+      status: 'confirmed'
     });
+    
     const savedPayment = await newCardPayment.save();
-    res.json(savedPayment);
+    
+    res.status(201).json({
+      message: 'Card payment created successfully',
+      payment: savedPayment
+    });
   } catch (error) {
+    console.error('Error creating card payment:', error);
     res.status(500).json({ error: error.message });
   }
 });
-  
+
 // Retrieve all payments (both Portal and Card)
 router.get('/', async (req, res) => {
   try {
@@ -93,6 +161,17 @@ router.get('/card', async (req, res) => {
   try {
     const cardPayments = await CardPayment.find();
     res.json(cardPayments);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get payments for a specific customer
+router.get('/customer/:customerId', async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    const payments = await Payment.find({ customerId });
+    res.json(payments);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

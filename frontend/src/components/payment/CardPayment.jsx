@@ -111,15 +111,39 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
     setLoading(true);
     
     try {
+      // Get customer ID from local storage
+      const customerData = localStorage.getItem('customerData');
+      if (!customerData) {
+        enqueueSnackbar('You must be logged in to make a payment', { variant: 'error' });
+        setLoading(false);
+        return;
+      }
+      
+      const customer = JSON.parse(customerData);
+      const customerId = customer.C_ID;
+      
+      console.log('Sending payment with data:', {
+        customerId,
+        eventId,
+        packageId,
+        p_amount: amount,
+        cardDetails: {
+          cardNumber: formData.cardNumber.replace(/\s/g, ''),
+          cardholderName: formData.cardName
+        }
+      });
+      
       // Send payment data to backend with card details
       const response = await axios.post('http://localhost:5555/api/payments/card', {
         p_amount: amount,
         c_type: 'Credit Card',
         c_description: `Payment for event ${eventId}, package ${packageId}`,
-        cardNumber: formData.cardNumber,
+        cardNumber: formData.cardNumber.replace(/\s/g, ''),
         cardholderName: formData.cardName,
-        expiryDate: formData.expiryDate
-        // Note: CVV is not stored for security
+        expiryDate: formData.expiryDate,
+        customerId,
+        eventId,
+        packageId
       });
       
       enqueueSnackbar('Payment processed successfully!', { variant: 'success' });
@@ -127,7 +151,7 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
       // Navigate to success page with payment details
       navigate('/payment/success', { 
         state: { 
-          paymentId: response.data.P_ID,
+          paymentId: response.data.payment.P_ID,
           amount,
           eventId,
           packageId,
@@ -136,10 +160,13 @@ const CardPayment = ({ amount, eventId, packageId, onCancel }) => {
         } 
       });
     } catch (error) {
-      enqueueSnackbar(
-        error.response?.data?.error || 'Failed to process payment',
-        { variant: 'error' }
-      );
+      console.error('Payment error:', error);
+      if (error.response && error.response.data) {
+        console.error('Error details:', error.response.data);
+      }
+      enqueueSnackbar(error.response?.data?.error || 'Failed to process payment. Please try again.', { 
+        variant: 'error' 
+      });
       setLoading(false);
     }
   };
