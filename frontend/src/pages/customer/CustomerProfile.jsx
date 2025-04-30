@@ -1,32 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { FaUser, FaEdit, FaPhone, FaSignOutAlt, FaArrowLeft, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa';
+import { useSnackbar } from 'notistack';
+import { 
+  FaUser, 
+  FaPhone, 
+  FaIdCard, 
+  FaCalendarAlt, 
+  FaMoneyBillWave, 
+  FaSignOutAlt, 
+  FaEdit,
+  FaArrowLeft
+} from 'react-icons/fa';
 
 const CustomerProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
-    // Check if customer is logged in
-    const customerData = localStorage.getItem('customerData');
-    if (!customerData) {
-      navigate('/customer/login');
-      return;
-    }
-
     const fetchProfile = async () => {
       try {
-        const userData = JSON.parse(customerData);
+        const customerData = localStorage.getItem('customerData');
+        if (!customerData) {
+          enqueueSnackbar('Please log in to view your profile', { variant: 'error' });
+          navigate('/customer/login');
+          return;
+        }
         
-        // Fetch the customer details using their ID
-        const response = await axios.get(`http://localhost:5555/api/customers/${userData.C_ID}`);
+        const userData = JSON.parse(customerData);
+        const userId = userData.userId || userData.C_ID; // Handle both new and old model
+        
+        let response;
+        
+        // Try new endpoint first
+        try {
+          response = await axios.get(`http://localhost:5555/api/auth/me`, {
+            headers: { 
+              Authorization: `Bearer ${localStorage.getItem('authToken')}` 
+            }
+          });
+        } catch (err) {
+          console.log('Falling back to direct profile fetch', err);
+          
+          // Try user model API
+          try {
+            response = await axios.get(`http://localhost:5555/api/users/profile/${userId}`);
+          } catch (userErr) {
+            // Fall back to old customer API
+            response = await axios.get(`http://localhost:5555/api/customers/${userId}`);
+          }
+        }
+        
         setProfile(response.data);
       } catch (error) {
-        enqueueSnackbar('Failed to fetch profile information', { variant: 'error' });
+        enqueueSnackbar('Failed to load profile data', { variant: 'error' });
       } finally {
         setLoading(false);
       }
@@ -38,6 +68,8 @@ const CustomerProfile = () => {
   const handleLogout = () => {
     localStorage.removeItem('customerToken');
     localStorage.removeItem('customerData');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('authToken');
     enqueueSnackbar('Logged out successfully', { variant: 'success' });
     navigate('/');
   };
@@ -45,7 +77,10 @@ const CustomerProfile = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-sky-50 py-8 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <p className="text-gray-600">Loading profile...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-700 mx-auto"></div>
+          <p className="mt-3 text-gray-600">Loading your profile...</p>
+        </div>
       </div>
     );
   }
@@ -67,8 +102,12 @@ const CustomerProfile = () => {
                 <FaUser className="text-4xl text-sky-500" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">{profile?.name}</h1>
-                <p className="opacity-90">Customer ID: {profile?.C_ID}</p>
+                <h1 className="text-2xl font-bold">
+                  {profile?.firstName && profile?.lastName 
+                    ? `${profile.firstName} ${profile.lastName}`
+                    : profile?.name || 'Customer'}
+                </h1>
+                <p className="opacity-90">Customer ID: {profile?.userId || profile?.C_ID}</p>
               </div>
             </div>
           </div>
@@ -79,7 +118,11 @@ const CustomerProfile = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-500">Full Name</p>
-                  <p className="font-medium">{profile?.name}</p>
+                  <p className="font-medium">
+                    {profile?.firstName && profile?.lastName 
+                      ? `${profile.firstName} ${profile.lastName}`
+                      : profile?.name || 'N/A'}
+                  </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-500">Username</p>
@@ -95,8 +138,28 @@ const CustomerProfile = () => {
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-500">Member Since</p>
                   <p className="font-medium">
-                    {new Date(profile?.createdAt).toLocaleDateString()}
+                    {profile?.createdAt 
+                      ? new Date(profile.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })
+                      : "N/A"}
                   </p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-500">Customer ID</p>
+                  <div className="flex items-center">
+                    <FaIdCard className="text-gray-400 mr-2" />
+                    <p className="font-medium">{profile?.userId || profile?.C_ID}</p>
+                  </div>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-500">Account Status</p>
+                  <div className="flex items-center">
+                    <div className="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></div>
+                    <p className="font-medium text-green-700">Active</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -124,7 +187,7 @@ const CustomerProfile = () => {
           </div>
         </div>
 
-        <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6 mt-6">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800">Account Actions</h2>
           </div>
@@ -145,7 +208,8 @@ const CustomerProfile = () => {
                 className="flex items-center p-3 text-base font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 group rounded-md"
               >
                 <FaMoneyBillWave className="text-sky-600 mr-3" />
-                My Payments
+                <span className="flex-1">Payment History</span>
+                <span>→</span>
               </Link>
             </div>
           </div>

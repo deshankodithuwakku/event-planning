@@ -81,17 +81,25 @@ export const getCurrentUser = async (req, res) => {
     if (user.role === 'customer') {
       return res.status(200).json({
         userId: user.userId,
+        C_ID: user.userId, // Include C_ID for backward compatibility
+        firstName: user.firstName,
+        lastName: user.lastName,
         name: `${user.firstName} ${user.lastName}`,
         userName: user.userName,
         phoneNo: user.phoneNo,
-        role: user.role
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       });
     } else {
       return res.status(200).json({
         userId: user.userId,
+        A_ID: user.userId, // Include A_ID for backward compatibility
         userName: user.userName,
         phoneNo: user.phoneNo,
-        role: user.role
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       });
     }
   } catch (error) {

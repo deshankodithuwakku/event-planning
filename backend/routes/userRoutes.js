@@ -107,6 +107,69 @@ router.get('/:userId/events', authenticate, async (req, res) => {
   }
 });
 
+// Get user profile (migration friendly endpoint)
+router.get('/profile/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Try to find in User model first (new model)
+    let user = await User.findOne({ userId }).select('-password');
+    
+    if (!user) {
+      // If not found, try in Customer model (old model)
+      const { Customer } = await import('../models/customerModel.js');
+      const customer = await Customer.findOne({ C_ID: userId }).select('-password');
+      
+      if (!customer) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Map customer model to unified format
+      return res.status(200).json({
+        userId: customer.C_ID,
+        C_ID: customer.C_ID,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        name: `${customer.firstName} ${customer.lastName}`,
+        userName: customer.userName,
+        phoneNo: customer.phoneNo,
+        role: 'customer',
+        createdAt: customer.createdAt,
+        updatedAt: customer.updatedAt
+      });
+    }
+    
+    // Format response based on user role
+    if (user.role === 'customer') {
+      return res.status(200).json({
+        userId: user.userId,
+        C_ID: user.userId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        name: `${user.firstName} ${user.lastName}`,
+        userName: user.userName,
+        phoneNo: user.phoneNo,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      });
+    } else {
+      return res.status(200).json({
+        userId: user.userId,
+        A_ID: user.userId,
+        userName: user.userName,
+        phoneNo: user.phoneNo,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      });
+    }
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send({ message: error.message });
+  }
+});
+
 // Add a debugging endpoint
 router.get('/debug', (req, res) => {
   res.status(200).json({ 
