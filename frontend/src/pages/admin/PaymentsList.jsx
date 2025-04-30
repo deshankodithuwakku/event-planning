@@ -189,12 +189,12 @@ const PaymentsList = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-3">
-                          <button
+                          {/* <button
                             onClick={() => handleEditClick(payment)}
                             className="text-indigo-600 hover:text-indigo-900"
                           >
                             <FaEdit />
-                          </button>
+                          </button> */}
                           <button
                             onClick={() => handleDeletePayment(payment._id)}
                             className="text-red-600 hover:text-red-900"

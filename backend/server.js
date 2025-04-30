@@ -2,12 +2,13 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import customerRoutes from './routes/customerRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import packageRoutes from './routes/packageRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import feedbackRoutes from './routes/feedbackRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -29,7 +30,8 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Register API routes
-app.use('/api/customers', customerRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/payments', paymentRoutes);

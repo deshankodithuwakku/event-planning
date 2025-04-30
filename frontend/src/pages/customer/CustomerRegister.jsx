@@ -29,7 +29,15 @@ const CustomerRegister = () => {
   useEffect(() => {
     const fetchCustomerId = async () => {
       try {
-        const response = await axios.get('http://localhost:5555/api/customers/generate-id');
+        // Try the new endpoint first
+        let response;
+        try {
+          response = await axios.get('http://localhost:5555/api/users/generate-customer-id');
+        } catch (err) {
+          // Fall back to the old endpoint if the new one fails
+          console.log('Falling back to old endpoint', err);
+          response = await axios.get('http://localhost:5555/api/customers/generate-id');
+        }
         setFormData(prev => ({ ...prev, C_ID: response.data.id }));
       } catch (error) {
         enqueueSnackbar('Failed to generate Customer ID. Please try again.', { variant: 'error' });
@@ -114,7 +122,7 @@ const CustomerRegister = () => {
     
     try {
       const apiData = {
-        C_ID: formData.C_ID,
+        userId: formData.C_ID,
         firstName: formData.firstName,
         lastName: formData.lastName,
         userName: formData.userName,
@@ -122,7 +130,26 @@ const CustomerRegister = () => {
         phoneNo: formData.phoneNo
       };
       
-      const response = await axios.post('http://localhost:5555/api/customers', apiData);
+      let response;
+      try {
+        // Try the new endpoint first
+        response = await axios.post('http://localhost:5555/api/users/customer', apiData);
+      } catch (err) {
+        // Fall back to the old endpoint if the new one fails
+        console.log('Falling back to old endpoint', err);
+        
+        // Map the data back to the format expected by the old endpoint
+        const oldApiData = {
+          C_ID: formData.C_ID,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          userName: formData.userName,
+          password: formData.password,
+          phoneNo: formData.phoneNo
+        };
+        
+        response = await axios.post('http://localhost:5555/api/customers', oldApiData);
+      }
       
       enqueueSnackbar('Registration successful!', { variant: 'success' });
       setTimeout(() => {

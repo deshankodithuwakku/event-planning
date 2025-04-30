@@ -31,7 +31,13 @@ const AdminDashboard = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get('http://localhost:5555/api/events');
+      // Get the admin token from localStorage
+      const token = localStorage.getItem('adminToken');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      const response = await axios.get('http://localhost:5555/api/events', config);
       setEvents(response.data.data);
     } catch (error) {
       enqueueSnackbar('Failed to fetch events', { variant: 'error' });
@@ -42,8 +48,15 @@ const AdminDashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:5555/api/customers');
-      setUsers(response.data.data);
+      // Get the admin token from localStorage
+      const token = localStorage.getItem('adminToken');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      // // Use the new unified users endpoint with proper authorization
+      // const response = await axios.get('http://localhost:5555/api/users/customers', config);
+      // setUsers(response.data.data);
     } catch (error) {
       enqueueSnackbar('Failed to fetch users', { variant: 'error' });
     } finally {
@@ -54,6 +67,7 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminData');
+    localStorage.removeItem('userRole');
     enqueueSnackbar('Logged out successfully', { variant: 'success' });
     navigate('/admin/login');
   };
@@ -167,8 +181,6 @@ const AdminDashboard = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -177,10 +189,10 @@ const AdminDashboard = () => {
                   {events.map((event) => (
                     <tr key={event._id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{event.E_ID}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(event.date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{event.location}</td>
+                      </td> */}
+                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{event.location}</td> */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                           ${event.status === 'active' ? 'bg-green-100 text-green-800' : 

@@ -13,6 +13,9 @@ import packageRoutes from './routes/packageRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import feedbackRoutes from './routes/feedbackRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import authRoutes from './routes/authRoutes.js'; // Add this import
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -45,12 +48,15 @@ if (!fs.existsSync(bankSlipsDir)) {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Register API routes
-app.use('/api/customers', customerRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes); // Add this line
+app.use('/api/customers', customerRoutes); // Keep for backward compatibility
 app.use('/api/events', eventRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/admins', adminRoutes);
 
 // Root route
 app.get('/', (req, res) => {

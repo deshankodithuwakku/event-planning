@@ -1,41 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaUserCircle, FaCaretDown, FaSignOutAlt, FaUser } from 'react-icons/fa';
 import logo1 from '../assets/logo1.jpg';
+import { useAuth } from '../contexts/AuthContext';
 
-/**
- * Header Component
- * Main navigation component that includes:
- * - Logo and site branding
- * - Navigation links
- * - Authentication dropdown with login/register options
- * - User profile menu when logged in
- */
 const Header = () => {
-  // State management for dropdown and authentication
   const [showAuthDropdown, setShowAuthDropdown] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
+  const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
 
-  // Check authentication status on component mount
-  useEffect(() => {
-    // Check if user is logged in
-    const customerData = localStorage.getItem('customerData');
-    if (customerData) {
-      setIsLoggedIn(true);
-      setUserInfo(JSON.parse(customerData));
-    } else {
-      setIsLoggedIn(false);
-      setUserInfo(null);
-    }
-  }, []);
-
-  // Handle user logout
   const handleLogout = () => {
-    localStorage.removeItem('customerToken');
-    localStorage.removeItem('customerData');
-    setIsLoggedIn(false);
-    setUserInfo(null);
+    logout();
     setShowAuthDropdown(false);
     window.location.href = '/'; // Refresh the page to update state
   };
@@ -57,8 +31,10 @@ const Header = () => {
             <Link to="/about" className="text-white hover:text-blue-100 transition">About</Link>
             <Link to="/contact" className="text-white hover:text-blue-100 transition">Contact</Link>
             <Link to="/feedbackviews" className="text-white hover:text-blue-100 transition">Feedback</Link>
-            {isLoggedIn && (
-              <Link to="/customer/profile" className="text-white hover:text-blue-100 transition">Profile</Link>
+            {isAuthenticated && (
+              <Link to={isAdmin ? "/admin/dashboard" : "/customer/profile"} className="text-white hover:text-blue-100 transition">
+                {isAdmin ? "Dashboard" : "Profile"}
+              </Link>
             )}
           </nav>
 
@@ -70,14 +46,14 @@ const Header = () => {
               className="flex items-center space-x-1 text-white px-4 py-2 rounded-full bg-blue-700 hover:bg-blue-800 transition"
             >
               <FaUserCircle />
-              <span>{isLoggedIn ? userInfo?.userName || 'Account' : 'Account'}</span>
+              <span>{isAuthenticated ? currentUser?.userName || 'Account' : 'Account'}</span>
               <FaCaretDown className={`transition-transform duration-300 ${showAuthDropdown ? 'rotate-180' : ''}`} />
             </button>
             
             {/* Dropdown menu content */}
             {showAuthDropdown && (
               <div className="absolute right-0 mt-2 w-60 bg-white rounded-lg shadow-xl py-2 z-20">
-                {isLoggedIn ? (
+                {isAuthenticated ? (
                   // Logged in user menu
                   <div className="px-4 py-2">
                     {/* User profile summary */}
@@ -86,18 +62,18 @@ const Header = () => {
                         <FaUser className="text-sky-600" />
                       </div>
                       <div>
-                        <p className="font-medium">{userInfo?.userName}</p>
-                        <p className="text-xs text-gray-500">{userInfo?.C_ID}</p>
+                        <p className="font-medium">{currentUser?.userName}</p>
+                        <p className="text-xs text-gray-500">{isAdmin ? currentUser?.A_ID : currentUser?.C_ID}</p>
                       </div>
                     </div>
                     {/* Profile actions */}
                     <div className="space-y-2">
                       <Link 
-                        to="/customer/profile" 
+                        to={isAdmin ? "/admin/dashboard" : "/customer/profile"} 
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
                         onClick={() => setShowAuthDropdown(false)}
                       >
-                        My Profile
+                        {isAdmin ? "Dashboard" : "My Profile"}
                       </Link>
                       <button
                         onClick={handleLogout}
@@ -112,10 +88,9 @@ const Header = () => {
                   <>
                     {/* Customer authentication options */}
                     <div className="px-4 py-2 border-b border-gray-200">
-                      <p className="text-lg font-medium text-gray-800">Customer</p>
                       <div className="flex mt-2 space-x-2">
                         <Link 
-                          to="/customer/login" 
+                          to="/login" 
                           className="flex-1 text-center px-4 py-2 text-sm text-sky-600 hover:bg-sky-50 rounded"
                           onClick={() => setShowAuthDropdown(false)}
                         >
@@ -127,19 +102,6 @@ const Header = () => {
                           onClick={() => setShowAuthDropdown(false)}
                         >
                           Register
-                        </Link>
-                      </div>
-                    </div>
-                    {/* Admin authentication options */}
-                    <div className="px-4 py-2">
-                      <p className="text-lg font-medium text-gray-800">Admin</p>
-                      <div className="flex mt-2 space-x-2">
-                        <Link 
-                          to="/admin/login" 
-                          className="flex-1 text-center px-4 py-2 text-sm text-sky-600 hover:bg-sky-50 rounded"
-                          onClick={() => setShowAuthDropdown(false)}
-                        >
-                          Login
                         </Link>
                       </div>
                     </div>

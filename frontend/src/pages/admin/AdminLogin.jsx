@@ -31,19 +31,23 @@ const AdminLogin = () => {
     setLoading(true);
     
     try {
-      // Implement actual login API call
-      const response = await axios.post('http://localhost:5555/api/admins/login', formData);
+      // Use the unified auth endpoint
+      const response = await axios.post('http://localhost:5555/api/auth/login', formData);
       
-      if (response.data && response.data.token) {
-        // Store admin data in localStorage
-        localStorage.setItem('adminToken', response.data.token);
-        localStorage.setItem('adminData', JSON.stringify(response.data.admin));
-        
-        enqueueSnackbar('Admin login successful!', { variant: 'success' });
-        navigate('/admin/dashboard');
-      } else {
-        throw new Error('Invalid response from server');
+      // Check if this is actually an admin account
+      if (response.data.userType !== 'admin') {
+        enqueueSnackbar('This account does not have admin privileges', { variant: 'error' });
+        setLoading(false);
+        return;
       }
+      
+      // Store admin data in localStorage
+      localStorage.setItem('adminToken', response.data.token);
+      localStorage.setItem('adminData', JSON.stringify(response.data.user));
+      localStorage.setItem('userRole', 'admin');
+      
+      enqueueSnackbar('Admin login successful!', { variant: 'success' });
+      navigate('/admin/dashboard');
     } catch (error) {
       enqueueSnackbar(
         error.response?.data?.message || 'Login failed. Please check your credentials.', 
