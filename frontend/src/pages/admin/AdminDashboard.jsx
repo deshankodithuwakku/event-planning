@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCreditCard, FaUsers } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCreditCard, FaUsers, FaComments, FaFilePdf } from 'react-icons/fa';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import EditUser from './EditUser';
 
 const AdminDashboard = () => {
@@ -117,6 +119,60 @@ const AdminDashboard = () => {
     }
   };
 
+  // Generate PDF report of all events
+  const generateEventsPDF = () => {
+    try {
+      // Create a new jsPDF instance
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.setTextColor(40, 40, 40);
+      doc.text('Events Management Report', 105, 15, { align: 'center' });
+      
+      // Add date
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
+      
+      // Format data for table
+      const tableData = events.map((event) => [
+        event.E_ID,
+        event.E_name,
+        new Date(event.date).toLocaleDateString(),
+        event.location,
+        event.status
+      ]);
+      
+      // Create table
+      doc.autoTable({
+        startY: 30,
+        head: [['ID', 'Event Name', 'Date', 'Location', 'Status']],
+        body: tableData,
+        headStyles: {
+          fillColor: [147, 51, 234],
+          textColor: [255, 255, 255]
+        },
+        alternateRowStyles: {
+          fillColor: [249, 245, 255]
+        },
+        margin: { top: 30 }
+      });
+      
+      // Add summary
+      const activeEvents = events.filter(e => e.status === 'active').length;
+      doc.text(`Total Events: ${events.length}`, 14, doc.lastAutoTable.finalY + 10);
+      doc.text(`Active Events: ${activeEvents}`, 14, doc.lastAutoTable.finalY + 15);
+      doc.text(`Upcoming Events: ${events.filter(e => new Date(e.date) > new Date()).length}`, 14, doc.lastAutoTable.finalY + 20);
+      
+      // Save the PDF
+      doc.save('events_management_report.pdf');
+      enqueueSnackbar('PDF generated successfully!', { variant: 'success' });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      enqueueSnackbar('Failed to generate PDF', { variant: 'error' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       {isEditModalOpen && selectedUser && (
@@ -154,6 +210,12 @@ const AdminDashboard = () => {
             >
               <FaUsers className="mr-2" /> View Users
             </Link>
+            <Link
+              to="/admin/feedback"
+              className="flex items-center bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md"
+            >
+              <FaComments className="mr-2" /> View Feedback
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
@@ -165,8 +227,17 @@ const AdminDashboard = () => {
 
         {/* Events Section */}
         <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-xl font-semibold text-gray-800">Manage Events</h2>
+            
+            {!loading && events.length > 0 && (
+              <button
+                onClick={generateEventsPDF}
+                className="flex items-center bg-purple-600 text-white px-3 py-1 text-sm rounded hover:bg-purple-700 transition-colors"
+              >
+                <FaFilePdf className="mr-1" /> PDF Report
+              </button>
+            )}
           </div>
           
           {loading ? (

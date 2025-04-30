@@ -11,6 +11,10 @@ const packageSchema = mongoose.Schema(
       type: Number,
       required: true,
     },
+    Pg_description: {
+      type: String,
+      required: true,
+    },
     event: {
       type: String,
       required: true,

@@ -32,16 +32,18 @@ router.post('/', async (request, response) => {
     if (
       !request.body.Pg_ID ||
       !request.body.Pg_price ||
+      !request.body.Pg_description ||
       !request.body.event
     ) {
       return response.status(400).send({
-        message: 'Required fields missing: Pg_ID, Pg_price, event',
+        message: 'Required fields missing: Pg_ID, Pg_price, Pg_description, event',
       });
     }
 
     const newPackage = {
       Pg_ID: request.body.Pg_ID,
       Pg_price: request.body.Pg_price,
+      Pg_description: request.body.Pg_description,
       event: request.body.event
     };
 
@@ -105,10 +107,13 @@ router.put('/:id', async (request, response) => {
   try {
     const { id } = request.params;
     
-    // Only allow updating Pg_price field
+    // Allow updating Pg_price and Pg_description fields
     const updateData = {};
     if (request.body.Pg_price !== undefined) {
       updateData.Pg_price = request.body.Pg_price;
+    }
+    if (request.body.Pg_description !== undefined) {
+      updateData.Pg_description = request.body.Pg_description;
     }
     
     if (Object.keys(updateData).length === 0) {

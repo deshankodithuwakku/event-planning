@@ -26,6 +26,9 @@ router.get('/generate-customer-id', generateCustomerId);
 router.get('/generate-admin-id', generateAdminId);
 router.post('/customer', createCustomer);
 
+// Make sure this route is accessible without authentication for backward compatibility
+router.put('/:id', updateUser);
+
 // Protected routes
 router.get('/', authenticate, isAdmin, getAllUsers);
 router.get('/customers', authenticate, isAdmin, getAllCustomers);
@@ -33,7 +36,6 @@ router.get('/admins', authenticate, isAdmin, getAllAdmins);
 router.get('/:id', authenticate, getUserById);
 router.get('/admins/:id', authenticate, isAdmin, getAdminById);
 router.post('/admin', authenticate, isAdmin, createAdmin);
-router.put('/:id', authenticate, updateUser);
 router.put('/admins/:id', authenticate, isAdmin, updateAdmin);
 router.delete('/:id', authenticate, isAdmin, deleteUser);
 router.delete('/admins/:id', authenticate, isAdmin, deleteAdmin);

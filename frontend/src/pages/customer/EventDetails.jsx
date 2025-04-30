@@ -131,6 +131,7 @@ const EventDetails = () => {
                     onClick={() => handlePackageSelect(pkg)}
                   >
                     <h3 className="text-lg font-semibold text-sky-700 mb-2">Package ID: {pkg.Pg_ID}</h3>
+                    <p className="text-gray-600 mb-4">{pkg.Pg_description || "No description available"}</p>
                     <div className="flex justify-between items-center mt-4">
                       <span className="text-2xl font-bold text-sky-600">${pkg.Pg_price}</span>
                       <div 

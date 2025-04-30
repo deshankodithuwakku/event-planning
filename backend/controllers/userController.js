@@ -173,18 +173,39 @@ export const createAdmin = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
+    const updateData = { ...req.body };
+    
+    // Handle legacy 'name' field conversion to firstName/lastName
+    if (updateData.name && !updateData.firstName && !updateData.lastName) {
+      const nameParts = updateData.name.trim().split(' ');
+      updateData.firstName = nameParts[0] || '';
+      updateData.lastName = nameParts.slice(1).join(' ') || '';
+      delete updateData.name; // Remove name field as we're using firstName/lastName
+    }
     
     const result = await User.findOneAndUpdate(
       { userId: id },
-      req.body,
+      updateData,
       { new: true }
     );
 
     if (!result) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    return res.status(200).send({ message: 'User updated successfully', data: result });
+    
+    return res.status(200).send({ 
+      message: 'User updated successfully', 
+      data: {
+        userId: result.userId,
+        firstName: result.firstName,
+        lastName: result.lastName,
+        userName: result.userName,
+        phoneNo: result.phoneNo,
+        role: result.role,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt
+      } 
+    });
   } catch (error) {
     console.log(error.message);
     res.status(500).send({ message: error.message });

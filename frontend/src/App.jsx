@@ -28,6 +28,7 @@ import EditFeedback from './pages/customer/EditFeedback';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import UnifiedLogin from './pages/UnifiedLogin';
+import AdminFeedbackView from './pages/admin/AdminFeedbackView';
 
 /**
  * Main App Component
@@ -139,6 +140,11 @@ const App = () => {
             <Route path='/admin/users' element={
               <ProtectedRoute requireAdmin>
                 <UsersList />
+              </ProtectedRoute>
+            } />
+            <Route path='/admin/feedback' element={
+              <ProtectedRoute requireAdmin>
+                <AdminFeedbackView />
               </ProtectedRoute>
             } />
           </Routes>

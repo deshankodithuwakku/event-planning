@@ -142,6 +142,12 @@ const MyEvents = () => {
                               <span className="text-gray-600">Package ID:</span>
                               <span className="font-medium">{item.package.Pg_ID}</span>
                             </div>
+                            {item.package.Pg_description && (
+                              <div className="mb-2">
+                                <span className="text-gray-600">Description:</span>
+                                <p className="mt-1 text-sm">{item.package.Pg_description}</p>
+                              </div>
+                            )}
                             <div className="flex justify-between">
                               <span className="text-gray-600">Price:</span>
                               <span className="font-bold text-sky-700">${item.package.Pg_price}</span>

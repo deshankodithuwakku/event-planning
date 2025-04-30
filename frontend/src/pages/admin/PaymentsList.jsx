@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaArrowLeft, FaCreditCard, FaWallet, FaFilter, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaCreditCard, FaWallet, FaFilter, FaEdit, FaTrash, FaFilePdf } from 'react-icons/fa';
 import EditPayment from './EditPayment';
 import { getImageUrl } from '../../utils/urlHelper';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const PaymentsList = () => {
   const [payments, setPayments] = useState([]);
@@ -95,6 +97,64 @@ const PaymentsList = () => {
     return null;
   };
 
+  // Generate PDF report of all payments
+  const generatePDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.setTextColor(40, 40, 40);
+      doc.text('Payment Transactions Report', 105, 15, { align: 'center' });
+      
+      // Add date and filter information
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
+      doc.text(`Filter: ${filter === 'all' ? 'All Payments' : filter === 'card' ? 'Card Payments' : 'Portal Payments'}`, 105, 27, { align: 'center' });
+      
+      // Format data for table
+      const tableData = payments.map((payment) => [
+        payment.P_ID,
+        payment.paymentType,
+        `$${payment.p_amount}`,
+        new Date(payment.p_date).toLocaleDateString(),
+        payment.paymentType === 'Card' ? payment.c_description : payment.p_description
+      ]);
+      
+      // Create table
+      doc.autoTable({
+        startY: 35,
+        head: [['Payment ID', 'Type', 'Amount', 'Date', 'Description']],
+        body: tableData,
+        headStyles: {
+          fillColor: [147, 51, 234], // Purple color
+          textColor: [255, 255, 255]
+        },
+        alternateRowStyles: {
+          fillColor: [249, 245, 255]
+        },
+        margin: { top: 35 }
+      });
+      
+      // Add summary
+      const totalAmount = payments.reduce((acc, curr) => acc + curr.p_amount, 0);
+      const cardPayments = payments.filter(p => p.paymentType === 'Card').length;
+      const portalPayments = payments.filter(p => p.paymentType === 'Portal').length;
+      
+      doc.text(`Total Payments: ${payments.length}`, 14, doc.lastAutoTable.finalY + 10);
+      doc.text(`Total Amount: $${totalAmount.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 15);
+      doc.text(`Card Payments: ${cardPayments}`, 14, doc.lastAutoTable.finalY + 20);
+      doc.text(`Portal Payments: ${portalPayments}`, 14, doc.lastAutoTable.finalY + 25);
+      
+      // Save the PDF
+      doc.save('payment_transactions_report.pdf');
+      enqueueSnackbar('PDF generated successfully!', { variant: 'success' });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      enqueueSnackbar('Failed to generate PDF', { variant: 'error' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       {isEditModalOpen && selectedPayment && (
@@ -106,13 +166,24 @@ const PaymentsList = () => {
       )}
       
       <div className="max-w-6xl mx-auto">
-        <button
-          onClick={() => navigate('/admin/dashboard')}
-          className="flex items-center text-purple-600 hover:text-purple-800 mb-6"
-        >
-          <FaArrowLeft className="mr-2" /> Back to Dashboard
-        </button>
-        
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => navigate('/admin/dashboard')}
+            className="flex items-center text-purple-600 hover:text-purple-800"
+          >
+            <FaArrowLeft className="mr-2" /> Back to Dashboard
+          </button>
+          
+          {!loading && payments.length > 0 && (
+            <button
+              onClick={generatePDF}
+              className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <FaFilePdf className="mr-2" /> Download PDF Report
+            </button>
+          )}
+        </div>
+
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-2xl font-semibold text-purple-800">Payment Transactions</h2>

@@ -18,7 +18,8 @@ const CustomerRegister = () => {
   const [errors, setErrors] = useState({
     firstName: '',
     lastName: '',
-    phoneNo: ''
+    phoneNo: '',
+    password: ''
   });
   
   const [loading, setLoading] = useState(false);
@@ -73,6 +74,23 @@ const CustomerRegister = () => {
     return '';
   };
 
+  const validatePassword = (password) => {
+    if (!password) return '';
+    
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    
+    if (!hasLowerCase && !hasUpperCase) {
+      return 'Password must include at least one lowercase and one uppercase letter';
+    } else if (!hasLowerCase) {
+      return 'Password must include at least one lowercase letter';
+    } else if (!hasUpperCase) {
+      return 'Password must include at least one uppercase letter';
+    }
+    
+    return '';
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -86,6 +104,8 @@ const CustomerRegister = () => {
       setErrors(prev => ({...prev, lastName: validateLastName(value)}));
     } else if (name === 'phoneNo' && value) {
       setErrors(prev => ({...prev, phoneNo: validatePhoneNumber(value)}));
+    } else if (name === 'password' && value) {
+      setErrors(prev => ({...prev, password: validatePassword(value)}));
     }
   };
 
@@ -101,14 +121,16 @@ const CustomerRegister = () => {
     const firstNameError = validateFirstName(formData.firstName);
     const lastNameError = validateLastName(formData.lastName);
     const phoneError = validatePhoneNumber(formData.phoneNo);
+    const passwordError = validatePassword(formData.password);
     
     setErrors({
       firstName: firstNameError,
       lastName: lastNameError,
-      phoneNo: phoneError
+      phoneNo: phoneError,
+      password: passwordError
     });
     
-    if (firstNameError || lastNameError || phoneError) {
+    if (firstNameError || lastNameError || phoneError || passwordError) {
       enqueueSnackbar('Please fix the highlighted errors', { variant: 'error' });
       return;
     }
@@ -265,10 +287,12 @@ const CustomerRegister = () => {
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                  className={`block w-full pl-10 pr-3 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500`}
                   placeholder="Password"
                 />
               </div>
+              {errors.password && <p className="text-xs mt-1 text-red-500">{errors.password}</p>}
+              <p className="text-xs mt-1 text-gray-500">Password must contain at least one uppercase and one lowercase letter</p>
             </div>
             
             <div>

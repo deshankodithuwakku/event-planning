@@ -6,7 +6,8 @@ import { FaUser, FaPhone, FaLock, FaArrowLeft, FaSave } from 'react-icons/fa';
 
 const CustomerProfileEdit = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     userName: '',
     phoneNo: '',
     password: '',
@@ -16,6 +17,7 @@ const CustomerProfileEdit = () => {
   const [originalData, setOriginalData] = useState({});
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [isLegacyModel, setIsLegacyModel] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
@@ -30,17 +32,43 @@ const CustomerProfileEdit = () => {
     const fetchProfile = async () => {
       try {
         const userData = JSON.parse(customerData);
+        const userId = userData.userId || userData.C_ID; // Handle both new and old model
         
-        // Fetch the customer details using their ID
-        const response = await axios.get(`http://localhost:5555/api/customers/${userData.C_ID}`);
-        const profileData = response.data;
+        let response;
+        let profileData;
+        let isLegacy = false;
+        
+        // Try new endpoint first - auth/me
+        try {
+          response = await axios.get(`http://localhost:5555/api/auth/me`, {
+            headers: { 
+              Authorization: `Bearer ${localStorage.getItem('authToken')}` 
+            }
+          });
+          profileData = response.data;
+        } catch (err) {
+          console.log('Falling back to direct profile fetch', err);
+          
+          // Try user model API
+          try {
+            response = await axios.get(`http://localhost:5555/api/users/profile/${userId}`);
+            profileData = response.data;
+          } catch (userErr) {
+            // Fall back to old customer API
+            response = await axios.get(`http://localhost:5555/api/customers/${userId}`);
+            profileData = response.data;
+            isLegacy = true; // Mark as legacy model - uses name instead of firstName/lastName
+          }
+        }
         
         // Store the original data
         setOriginalData(profileData);
+        setIsLegacyModel(isLegacy);
         
         // Set form data (omit password fields)
         setFormData({
-          name: profileData.name || '',
+          firstName: profileData.firstName || (profileData.name ? profileData.name.split(' ')[0] : ''),
+          lastName: profileData.lastName || (profileData.name ? profileData.name.split(' ')[1] || '' : ''),
           userName: profileData.userName || '',
           phoneNo: profileData.phoneNo || '',
           password: '',
@@ -69,7 +97,8 @@ const CustomerProfileEdit = () => {
     
     // Check if any fields have changed
     const hasChanges = 
-      formData.name !== originalData.name ||
+      formData.firstName !== (originalData.firstName || '') ||
+      formData.lastName !== (originalData.lastName || '') ||
       formData.userName !== originalData.userName ||
       formData.phoneNo !== originalData.phoneNo ||
       formData.password;
@@ -88,30 +117,63 @@ const CustomerProfileEdit = () => {
     setUpdating(true);
     
     try {
-      // Prepare data for API call
-      const updateData = {
-        name: formData.name,
-        userName: formData.userName,
-        phoneNo: formData.phoneNo
-      };
+      // Prepare data for API call based on model type
+      let updateData;
+      
+      if (isLegacyModel) {
+        // Legacy model expects 'name' field
+        updateData = {
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          userName: formData.userName,
+          phoneNo: formData.phoneNo
+        };
+      } else {
+        // New model expects firstName and lastName
+        updateData = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          userName: formData.userName,
+          phoneNo: formData.phoneNo
+        };
+      }
       
       // Only include password if it was provided
       if (formData.password) {
         updateData.password = formData.password;
       }
       
-      // Update the profile
-      const response = await axios.put(
-        `http://localhost:5555/api/customers/${originalData.C_ID}`,
-        updateData
-      );
+      const userId = originalData.userId || originalData.C_ID;
+      
+      // Update the profile - try new endpoint first
+      let response;
+      try {
+        response = await axios.put(
+          `http://localhost:5555/api/users/${userId}`,
+          updateData,
+          {
+            headers: { 
+              Authorization: `Bearer ${localStorage.getItem('authToken')}` 
+            }
+          }
+        );
+      } catch (err) {
+        // Fall back to old endpoint
+        response = await axios.put(
+          `http://localhost:5555/api/customers/${userId}`,
+          updateData
+        );
+      }
       
       // Update the stored customer data
       const customerData = JSON.parse(localStorage.getItem('customerData'));
       const updatedCustomerData = {
         ...customerData,
-        ...updateData
+        ...updateData,
+        // Ensure correct ID mapping
+        C_ID: customerData.C_ID || customerData.userId,
+        userId: customerData.userId || customerData.C_ID
       };
+      
       localStorage.setItem('customerData', JSON.stringify(updatedCustomerData));
       
       enqueueSnackbar('Profile updated successfully!', { variant: 'success' });
@@ -152,18 +214,37 @@ const CustomerProfileEdit = () => {
           
           <form className="p-6 space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                First Name
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaUser className="text-gray-400" />
                 </div>
                 <input
-                  id="name"
-                  name="name"
+                  id="firstName"
+                  name="firstName"
                   type="text"
-                  value={formData.name}
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaUser className="text-gray-400" />
+                </div>
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  value={formData.lastName}
                   onChange={handleChange}
                   className="pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500"
                 />

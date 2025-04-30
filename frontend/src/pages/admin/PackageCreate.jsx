@@ -11,6 +11,7 @@ const PackageCreate = () => {
   const [currentPackage, setCurrentPackage] = useState({
     Pg_ID: '',
     Pg_price: '',
+    Pg_description: '',
   });
   
   const [loading, setLoading] = useState(false);
@@ -56,7 +57,7 @@ const PackageCreate = () => {
 
   const addPackage = async () => {
     // Validate package data
-    if (!currentPackage.Pg_ID || !currentPackage.Pg_price) {
+    if (!currentPackage.Pg_ID || !currentPackage.Pg_price || !currentPackage.Pg_description) {
       enqueueSnackbar('Please fill in all required package fields', { variant: 'error' });
       return;
     }
@@ -68,6 +69,7 @@ const PackageCreate = () => {
       const packageData = {
         Pg_ID: currentPackage.Pg_ID,
         Pg_price: currentPackage.Pg_price,
+        Pg_description: currentPackage.Pg_description,
         event: eventId
       };
       
@@ -81,6 +83,7 @@ const PackageCreate = () => {
       setCurrentPackage({
         Pg_ID: '',
         Pg_price: '',
+        Pg_description: '',
       });
       
       // Generate new package ID
@@ -128,10 +131,11 @@ const PackageCreate = () => {
               <div className="space-y-4">
                 {packages.map((pkg, index) => (
                   <div key={index} className="p-4 bg-white shadow rounded border border-gray-200">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between mb-2">
                       <h4 className="font-semibold">Package: {pkg.Pg_ID}</h4>
                       <span className="text-purple-600 font-medium">${pkg.Pg_price}</span>
                     </div>
+                    <p className="text-gray-600 text-sm">{pkg.Pg_description}</p>
                   </div>
                 ))}
               </div>
@@ -168,6 +172,21 @@ const PackageCreate = () => {
                   onChange={handlePackageChange}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
                   placeholder="Enter package price"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="Pg_description" className="block text-sm font-medium text-gray-700 mb-1">
+                  Description *
+                </label>
+                <textarea
+                  id="Pg_description"
+                  name="Pg_description"
+                  rows="4"
+                  value={currentPackage.Pg_description}
+                  onChange={handlePackageChange}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Enter package description"
                 />
               </div>
               

@@ -156,6 +156,9 @@ const EventView = () => {
                       Package ID
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Price
                     </th>
                   </tr>
@@ -165,6 +168,9 @@ const EventView = () => {
                     <tr key={pkg._id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {pkg.Pg_ID}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {pkg.Pg_description || "No description available"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-3 py-1 text-sm font-medium bg-purple-100 text-purple-800 rounded-full">

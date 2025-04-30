@@ -81,7 +81,8 @@ router.get('/:customerId/events', async (req, res) => {
           },
           package: {
             Pg_ID: package_.Pg_ID,
-            Pg_price: package_.Pg_price
+            Pg_price: package_.Pg_price,
+            Pg_description: package_.Pg_description
           }
         });
       }

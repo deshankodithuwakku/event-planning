@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaArrowLeft, FaEdit, FaTrash, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash, FaUsers, FaFilePdf } from 'react-icons/fa';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import EditUser from './EditUser';
 
 const UsersList = () => {
@@ -68,6 +70,54 @@ const UsersList = () => {
     }
   };
 
+  // Generate PDF report of all users
+  const generatePDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.setTextColor(40, 40, 40);
+      doc.text('User Management Report', 105, 15, { align: 'center' });
+      
+      // Add date
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
+      
+      // Format data for table
+      const tableData = users.map((user) => [
+        user.C_ID,
+        `${user.firstName} ${user.lastName}`,
+        user.phoneNo
+      ]);
+      
+      // Create table
+      doc.autoTable({
+        startY: 30,
+        head: [['User ID', 'Name', 'Phone Number']],
+        body: tableData,
+        headStyles: {
+          fillColor: [147, 51, 234],
+          textColor: [255, 255, 255]
+        },
+        alternateRowStyles: {
+          fillColor: [249, 245, 255]
+        },
+        margin: { top: 30 }
+      });
+      
+      // Add summary
+      doc.text(`Total Users: ${users.length}`, 14, doc.lastAutoTable.finalY + 10);
+      
+      // Save the PDF
+      doc.save('user_management_report.pdf');
+      enqueueSnackbar('PDF generated successfully!', { variant: 'success' });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      enqueueSnackbar('Failed to generate PDF', { variant: 'error' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       {isEditModalOpen && selectedUser && (
@@ -79,13 +129,24 @@ const UsersList = () => {
       )}
       
       <div className="max-w-6xl mx-auto">
-        <button
-          onClick={() => navigate('/admin/dashboard')}
-          className="flex items-center text-purple-600 hover:text-purple-800 mb-6"
-        >
-          <FaArrowLeft className="mr-2" /> Back to Dashboard
-        </button>
-        
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => navigate('/admin/dashboard')}
+            className="flex items-center text-purple-600 hover:text-purple-800"
+          >
+            <FaArrowLeft className="mr-2" /> Back to Dashboard
+          </button>
+          
+          {!loading && users.length > 0 && (
+            <button
+              onClick={generatePDF}
+              className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <FaFilePdf className="mr-2" /> Download PDF Report
+            </button>
+          )}
+        </div>
+
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-2xl font-semibold text-purple-800">All Users</h2>
@@ -107,7 +168,6 @@ const UsersList = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th> */}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -119,7 +179,6 @@ const UsersList = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {user.firstName} {user.lastName}
                       </td>
-                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td> */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phoneNo}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">

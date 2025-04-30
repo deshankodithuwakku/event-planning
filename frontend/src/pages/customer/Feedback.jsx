@@ -6,13 +6,48 @@ import { FaStar, FaArrowLeft, FaComment, FaThumbsUp, FaHeart, FaSmile } from 're
 
 const Feedback = () => {
   const [message, setMessage] = useState('');
+  const [messageError, setMessageError] = useState('');
   const [rating, setRating] = useState(5);
   const [hover, setHover] = useState(0);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
+  const validateMessage = (text) => {
+    // Check for numbers
+    if (/\d/.test(text)) {
+      return 'Numbers are not allowed in feedback';
+    }
+    
+    // Check for invalid characters - allow letters, spaces, and basic punctuation
+    if (!/^[a-zA-Z\s.,!?;:'\-() ]*$/.test(text)) {
+      return 'Only letters and basic punctuation are allowed';
+    }
+    
+    // Check length
+    if (text.length > 200) {
+      return 'Maximum 200 characters allowed';
+    }
+    
+    return '';
+  };
+
+  const handleMessageChange = (e) => {
+    const newMessage = e.target.value;
+    setMessage(newMessage);
+    setMessageError(validateMessage(newMessage));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate message before submitting
+    const error = validateMessage(message);
+    if (error) {
+      setMessageError(error);
+      enqueueSnackbar(error, { variant: 'error' });
+      return;
+    }
+    
     try {
       // Get the customer data from localStorage
       const customerData = localStorage.getItem('customerData');
@@ -98,19 +133,31 @@ const Feedback = () => {
                 <label htmlFor="message" className="block text-lg font-medium text-gray-700">
                   Your Feedback
                 </label>
-                <textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Share your thoughts with us..."
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 min-h-[150px]"
-                />
+                <div className="relative">
+                  <textarea
+                    id="message"
+                    value={message}
+                    onChange={handleMessageChange}
+                    placeholder="Share your thoughts with us... (letters and punctuation only, no numbers)"
+                    required
+                    className={`w-full px-4 py-3 border ${messageError ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 min-h-[150px]`}
+                    maxLength="200"
+                  />
+                  <div className="flex justify-between mt-2">
+                    <p className={`text-sm ${messageError ? 'text-red-500' : 'text-gray-500'}`}>
+                      {messageError || 'Letters and punctuation only, no numbers'}
+                    </p>
+                    <p className={`text-sm ${message.length > 180 ? 'text-amber-500' : 'text-gray-500'}`}>
+                      {message.length}/200 characters
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <button 
                 type="submit"
-                className="w-full bg-sky-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-sky-700 transition duration-300"
+                disabled={!!messageError}
+                className={`w-full ${messageError ? 'bg-gray-400 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-700'} text-white px-6 py-3 rounded-lg font-semibold transition duration-300`}
               >
                 Submit Feedback
               </button>
