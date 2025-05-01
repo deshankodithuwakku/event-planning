@@ -215,7 +215,10 @@ const MyPayments = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {payments.map((payment) => (
-                    <tr key={payment._id} className="hover:bg-gray-50">
+                    <tr 
+                      key={payment._id} 
+                      className={payment.status === 'refunded' ? 'bg-blue-50' : payment.status === 'cancelled' ? 'bg-red-50' : ''}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{payment.P_ID}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(payment.p_date || payment.createdAt)}

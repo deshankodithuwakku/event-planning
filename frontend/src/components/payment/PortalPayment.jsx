@@ -202,12 +202,12 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-sky-700 mb-4">Payment Portal</h2>
+      <h2 className="text-lg font-semibold text-sky-700 mb-4">Payment Bank</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="bg-gray-50 p-4 rounded-md mb-4">
           <div className="flex items-center text-gray-700 mb-2">
             <FaUniversity className="mr-2" /> 
-            <span>Make a payment through your preferred payment portal</span>
+            <span>Make a payment through your preferred payment bank</span>
           </div>
           <p className="text-sm text-gray-600">Transfer the amount of ${amount} to our account and provide the reference number below.</p>
         </div>

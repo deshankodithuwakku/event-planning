@@ -149,7 +149,7 @@ const UsersList = () => {
 
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-2xl font-semibold text-purple-800">All Users</h2>
+            <h2 className="text-2xl font-semibold text-purple-800">All Customers</h2>
             <div className="flex items-center text-purple-600">
               <FaUsers className="mr-2" /> {users.length} Users
             </div>

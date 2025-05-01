@@ -29,6 +29,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import UnifiedLogin from './pages/UnifiedLogin';
 import AdminFeedbackView from './pages/admin/AdminFeedbackView';
+import CustomerPurchases from './pages/admin/CustomerPurchases';
 
 /**
  * Main App Component
@@ -145,6 +146,11 @@ const App = () => {
             <Route path='/admin/feedback' element={
               <ProtectedRoute requireAdmin>
                 <AdminFeedbackView />
+              </ProtectedRoute>
+            } />
+            <Route path='/admin/customer-purchases' element={
+              <ProtectedRoute requireAdmin>
+                <CustomerPurchases />
               </ProtectedRoute>
             } />
           </Routes>

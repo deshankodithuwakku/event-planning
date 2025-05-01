@@ -28,9 +28,7 @@ const EventCreate = () => {
     E_ID: '',
     E_name: '',
     E_description: '',
-    location: '',
-    status: 'active',
-    date: ''
+    status: 'active'
   });
   
   // UI state management
@@ -86,7 +84,7 @@ const EventCreate = () => {
     e.preventDefault();
     
     // Form validation
-    if (!formData.E_ID || !formData.E_name || !formData.E_description || !formData.location || !formData.date || !formData.status) {
+    if (!formData.E_ID || !formData.E_name || !formData.E_description || !formData.status) {
       enqueueSnackbar('Please fill in all required fields', { variant: 'error' });
       return;
     }
@@ -100,21 +98,6 @@ const EventCreate = () => {
     // Validate description (minimum 10 characters)
     if (formData.E_description.length < 10) {
       enqueueSnackbar('Description must be at least 10 characters long', { variant: 'error' });
-      return;
-    }
-
-    // Validate location (minimum 3 characters)
-    if (formData.location.length < 3) {
-      enqueueSnackbar('Location must be at least 3 characters long', { variant: 'error' });
-      return;
-    }
-
-    // Validate date (must be a future date)
-    const selectedDate = new Date(formData.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (selectedDate < today) {
-      enqueueSnackbar('Event date must be a future date', { variant: 'error' });
       return;
     }
     
@@ -206,40 +189,7 @@ const EventCreate = () => {
               ></textarea>
             </div>
             
-            {/* New Location field */}
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-                Location *
-              </label>
-              <input
-                id="location"
-                name="location"
-                type="text"
-                value={formData.location}
-                onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="Enter event location"
-                required
-              />
-            </div>
-            
-            {/* New Date field */}
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
-                Date *
-              </label>
-              <input
-                id="date"
-                name="date"
-                type="date"
-                value={formData.date}
-                onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                required
-              />
-            </div>
-            
-            {/* New Status field */}
+            {/* Status field */}
             <div>
               <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                 Status *

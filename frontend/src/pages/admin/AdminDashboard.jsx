@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCreditCard, FaUsers, FaComments, FaFilePdf } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCreditCard, FaUsers, FaComments, FaFilePdf, FaShoppingCart } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import EditUser from './EditUser';
@@ -134,19 +134,17 @@ const AdminDashboard = () => {
       doc.setFontSize(10);
       doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
       
-      // Format data for table
+      // Format data for table - removed date and location
       const tableData = events.map((event) => [
         event.E_ID,
         event.E_name,
-        new Date(event.date).toLocaleDateString(),
-        event.location,
         event.status
       ]);
       
-      // Create table
+      // Create table - removed date and location columns
       doc.autoTable({
         startY: 30,
-        head: [['ID', 'Event Name', 'Date', 'Location', 'Status']],
+        head: [['ID', 'Event Name', 'Status']],
         body: tableData,
         headStyles: {
           fillColor: [147, 51, 234],
@@ -158,11 +156,10 @@ const AdminDashboard = () => {
         margin: { top: 30 }
       });
       
-      // Add summary
+      // Add summary - removed upcoming events reference (date-based)
       const activeEvents = events.filter(e => e.status === 'active').length;
       doc.text(`Total Events: ${events.length}`, 14, doc.lastAutoTable.finalY + 10);
       doc.text(`Active Events: ${activeEvents}`, 14, doc.lastAutoTable.finalY + 15);
-      doc.text(`Upcoming Events: ${events.filter(e => new Date(e.date) > new Date()).length}`, 14, doc.lastAutoTable.finalY + 20);
       
       // Save the PDF
       doc.save('events_management_report.pdf');
@@ -208,7 +205,13 @@ const AdminDashboard = () => {
               to="/admin/users"
               className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
             >
-              <FaUsers className="mr-2" /> View Users
+              <FaUsers className="mr-2" /> View Customers 
+            </Link>
+            <Link
+              to="/admin/customer-purchases"
+              className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
+            >
+              <FaShoppingCart className="mr-2" /> Customer Purchases
             </Link>
             <Link
               to="/admin/feedback"
@@ -260,10 +263,6 @@ const AdminDashboard = () => {
                   {events.map((event) => (
                     <tr key={event._id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{event.E_ID}</td>
-                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(event.date).toLocaleDateString()}
-                      </td> */}
-                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{event.location}</td> */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                           ${event.status === 'active' ? 'bg-green-100 text-green-800' : 

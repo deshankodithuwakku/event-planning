@@ -129,7 +129,7 @@ const MyEvents = () => {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
-                        Event ID: {item.event.E_ID} | {formatDate(item.event.date)} | {item.event.location}
+                        Event ID: {item.event.E_ID}
                       </p>
                     </div>
                     

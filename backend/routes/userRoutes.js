@@ -18,6 +18,9 @@ import { authenticate, isAdmin } from '../middleware/authMiddleware.js';
 import Payment from '../models/Payment.js';
 import { Event } from '../models/eventModel.js';
 import { Package } from '../models/packageModel.js';
+import { Feedback } from '../models/feedbackModel.js';
+import { User } from '../models/userModel.js';
+import { getCustomerPurchases } from '../controllers/purchaseController.js';
 
 const router = express.Router();
 
@@ -108,6 +111,9 @@ router.get('/:userId/events', authenticate, async (req, res) => {
     res.status(500).send({ message: error.message });
   }
 });
+
+// Get customers with their purchased events, payments, and feedback
+router.get('/customers/purchases', getCustomerPurchases);
 
 // Get user profile (migration friendly endpoint)
 router.get('/profile/:userId', async (req, res) => {

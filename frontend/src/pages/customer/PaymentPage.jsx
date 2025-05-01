@@ -116,7 +116,7 @@ const PaymentPage = () => {
                     onClick={() => setPaymentMethod('portal')}
                   >
                     <FaWallet className="text-2xl mr-3 text-sky-600" />
-                    <span className="font-medium">Payment Portal</span>
+                    <span className="font-medium">Bank Transfer</span>
                   </button>
                 </div>
               </div>

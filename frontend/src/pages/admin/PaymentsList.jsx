@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaArrowLeft, FaCreditCard, FaWallet, FaFilter, FaEdit, FaTrash, FaFilePdf } from 'react-icons/fa';
+import { FaArrowLeft, FaCreditCard, FaWallet, FaFilter, FaEdit, FaTrash, FaFilePdf, FaUndoAlt } from 'react-icons/fa';
 import EditPayment from './EditPayment';
 import { getImageUrl } from '../../utils/urlHelper';
 import jsPDF from 'jspdf';
@@ -16,6 +16,7 @@ const PaymentsList = () => {
   const navigate = useNavigate();
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [events, setEvents] = useState({}); // Store events by ID for quick lookup
 
   useEffect(() => {
     // Check if admin is logged in
@@ -26,19 +27,41 @@ const PaymentsList = () => {
     }
 
     fetchPayments();
+    fetchEvents(); // Fetch all events to get their names
   }, [navigate, filter]);
+
+  const fetchEvents = async () => {
+    try {
+      const response = await axios.get('http://localhost:5555/api/events');
+      const eventsMap = {};
+
+      // Fix for the forEach error - handle both possible response structures
+      const eventsData = response.data.data || response.data;
+      if (Array.isArray(eventsData)) {
+        eventsData.forEach((event) => {
+          eventsMap[event.E_ID] = event.E_name;
+        });
+      } else {
+        console.warn('Events data is not in expected format:', response.data);
+      }
+
+      setEvents(eventsMap);
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+    }
+  };
 
   const fetchPayments = async () => {
     try {
       let endpoint = 'http://localhost:5555/api/payments';
-      
+
       // Apply filter if needed
       if (filter === 'card') {
         endpoint = 'http://localhost:5555/api/payments/card';
       } else if (filter === 'portal') {
         endpoint = 'http://localhost:5555/api/payments/portal';
       }
-      
+
       const response = await axios.get(endpoint);
       setPayments(response.data);
     } catch (error) {
@@ -81,6 +104,26 @@ const PaymentsList = () => {
     }
   };
 
+  const handleRefundPayment = async (paymentId) => {
+    if (!window.confirm('Are you sure you want to refund this payment?')) {
+      return;
+    }
+    
+    try {
+      // Add error handling with better logging
+      const response = await axios.patch(`http://localhost:5555/api/payments/admin/refund/${paymentId}`);
+      console.log('Refund response:', response.data);
+      enqueueSnackbar('Payment refunded successfully', { variant: 'success' });
+      fetchPayments(); // Refresh the list
+    } catch (error) {
+      console.error('Refund error:', error.response?.data || error.message);
+      enqueueSnackbar(
+        error.response?.data?.error || 'Failed to refund payment. Check server logs for details', 
+        { variant: 'error' }
+      );
+    }
+  };
+
   // Format date for display
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -97,55 +140,95 @@ const PaymentsList = () => {
     return null;
   };
 
+  // Modify the payment status badge renderer to highlight refunded payments
+  const getPaymentStatusBadge = (status) => {
+    switch (status) {
+      case 'confirmed':
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Confirmed</span>;
+      case 'cancelled':
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Cancelled</span>;
+      case 'refunded':
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Refunded</span>;
+      default:
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>;
+    }
+  };
+
   // Generate PDF report of all payments
   const generatePDF = () => {
     try {
       const doc = new jsPDF();
-      
+
       // Add title
       doc.setFontSize(20);
       doc.setTextColor(40, 40, 40);
       doc.text('Payment Transactions Report', 105, 15, { align: 'center' });
-      
+
       // Add date and filter information
       doc.setFontSize(10);
       doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
-      doc.text(`Filter: ${filter === 'all' ? 'All Payments' : filter === 'card' ? 'Card Payments' : 'Portal Payments'}`, 105, 27, { align: 'center' });
-      
-      // Format data for table
+      doc.text(
+        `Filter: ${
+          filter === 'all' ? 'All Payments' : filter === 'card' ? 'Card Payments' : 'Portal Payments'
+        }`,
+        105,
+        27,
+        { align: 'center' }
+      );
+
+      // Format data for table - include customer ID and event name
       const tableData = payments.map((payment) => [
         payment.P_ID,
+        payment.customerId || 'N/A',
+        events[payment.eventId] || 'Unknown Event',
         payment.paymentType,
         `$${payment.p_amount}`,
         new Date(payment.p_date).toLocaleDateString(),
-        payment.paymentType === 'Card' ? payment.c_description : payment.p_description
+        payment.paymentType === 'Card' ? payment.c_description : payment.p_description,
       ]);
-      
-      // Create table
+
+      // Create table with updated headers
       doc.autoTable({
         startY: 35,
-        head: [['Payment ID', 'Type', 'Amount', 'Date', 'Description']],
+        head: [['Payment ID', 'Customer ID', 'Event Name', 'Type', 'Amount', 'Date', 'Description']],
         body: tableData,
         headStyles: {
           fillColor: [147, 51, 234], // Purple color
-          textColor: [255, 255, 255]
+          textColor: [255, 255, 255],
         },
         alternateRowStyles: {
-          fillColor: [249, 245, 255]
+          fillColor: [249, 245, 255],
         },
-        margin: { top: 35 }
+        margin: { top: 35 },
       });
+
+      // Calculate statistics for different statuses
+      let cardPayments = 0;
+      let portalPayments = 0;
+      let totalAmount = 0;
+      let refundedPayments = 0;
+      let refundedAmount = 0;
       
-      // Add summary
-      const totalAmount = payments.reduce((acc, curr) => acc + curr.p_amount, 0);
-      const cardPayments = payments.filter(p => p.paymentType === 'Card').length;
-      const portalPayments = payments.filter(p => p.paymentType === 'Portal').length;
-      
+      payments.forEach(payment => {
+        if (payment.paymentType === 'Card') cardPayments++;
+        else if (payment.paymentType === 'Portal') portalPayments++;
+        
+        if (payment.status === 'refunded') {
+          refundedPayments++;
+          refundedAmount += payment.p_amount;
+        }
+        
+        totalAmount += payment.p_amount;
+      });
+
+      // Add summary information
       doc.text(`Total Payments: ${payments.length}`, 14, doc.lastAutoTable.finalY + 10);
       doc.text(`Total Amount: $${totalAmount.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 15);
       doc.text(`Card Payments: ${cardPayments}`, 14, doc.lastAutoTable.finalY + 20);
       doc.text(`Portal Payments: ${portalPayments}`, 14, doc.lastAutoTable.finalY + 25);
-      
+      doc.text(`Refunded Payments: ${refundedPayments}`, 14, doc.lastAutoTable.finalY + 30);
+      doc.text(`Refunded Amount: $${refundedAmount.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 35);
+
       // Save the PDF
       doc.save('payment_transactions_report.pdf');
       enqueueSnackbar('PDF generated successfully!', { variant: 'success' });
@@ -158,13 +241,9 @@ const PaymentsList = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       {isEditModalOpen && selectedPayment && (
-        <EditPayment 
-          payment={selectedPayment}
-          onClose={handleEditClose}
-          onSave={handleEditSave}
-        />
+        <EditPayment payment={selectedPayment} onClose={handleEditClose} onSave={handleEditSave} />
       )}
-      
+
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <button
@@ -173,7 +252,7 @@ const PaymentsList = () => {
           >
             <FaArrowLeft className="mr-2" /> Back to Dashboard
           </button>
-          
+
           {!loading && payments.length > 0 && (
             <button
               onClick={generatePDF}
@@ -200,31 +279,60 @@ const PaymentsList = () => {
               </select>
             </div>
           </div>
-          
+
           {loading ? (
             <div className="p-6 text-center">Loading payments...</div>
           ) : payments.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
-              No payment records found.
-            </div>
+            <div className="p-6 text-center text-gray-500">No payment records found.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank Slip</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Payment ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Customer ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Event Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Bank Slip
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {payments.map((payment) => (
-                    <tr key={payment._id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{payment.P_ID}</td>
+                    <tr key={payment._id} className={payment.status === 'refunded' ? 'bg-blue-50' : payment.status === 'cancelled' ? 'bg-red-50' : ''}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {payment.P_ID}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {payment.customerId || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {events[payment.eventId] || 'Unknown Event'}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {getPaymentTypeIcon(payment.paymentType)}
@@ -244,28 +352,42 @@ const PaymentsList = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {payment.paymentType === 'Portal' && payment.bankSlipUrl && (
-                          <a 
+                          <a
                             href={getImageUrl(payment.bankSlipUrl)}
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="text-purple-600 hover:text-purple-900"
                           >
-                            <img 
-                              src={getImageUrl(payment.bankSlipUrl)} 
-                              alt="Bank slip" 
+                            <img
+                              src={getImageUrl(payment.bankSlipUrl)}
+                              alt="Bank slip"
                               className="w-12 h-12 object-cover rounded border border-gray-300"
                             />
                           </a>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        {getPaymentStatusBadge(payment.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-3">
-                          {/* <button
+                          <button
                             onClick={() => handleEditClick(payment)}
-                            className="text-indigo-600 hover:text-indigo-900"
+                            className="text-purple-600 hover:text-purple-900"
                           >
                             <FaEdit />
-                          </button> */}
+                          </button>
+                          
+                          {payment.status === 'confirmed' && (
+                            <button
+                              onClick={() => handleRefundPayment(payment._id)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Refund payment"
+                            >
+                              <FaUndoAlt />
+                            </button>
+                          )}
+                          
                           <button
                             onClick={() => handleDeletePayment(payment._id)}
                             className="text-red-600 hover:text-red-900"

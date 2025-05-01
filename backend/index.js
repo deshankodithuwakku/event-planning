@@ -17,6 +17,9 @@ import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js'; // Add this import
 
+// Import the controller
+import { getCustomerPurchases } from './controllers/purchaseController.js';
+
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,6 +60,9 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/admins', adminRoutes);
+
+// Direct endpoint for development - bypassing auth for customer purchases
+app.get('/api/customer-purchases', getCustomerPurchases);
 
 // Root route
 app.get('/', (req, res) => {

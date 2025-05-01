@@ -313,6 +313,49 @@ router.patch('/customer/cancel/:id', async (req, res) => {
   }
 });
 
+// Allow admin to refund a payment - with improved error handling
+router.patch('/admin/refund/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`Processing refund request for payment ID: ${id}`);
+    
+    // Find the payment - try both MongoDB _id and P_ID fields
+    let payment = await Payment.findById(id);
+    
+    // If not found by _id, try finding by P_ID
+    if (!payment) {
+      payment = await Payment.findOne({ P_ID: id });
+    }
+    
+    // If still not found
+    if (!payment) {
+      console.log(`Payment not found with ID: ${id}`);
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+    
+    console.log(`Payment found: ${payment.P_ID}, status: ${payment.status}`);
+    
+    // Only allow refund if payment status is "confirmed"
+    if (payment.status !== 'confirmed') {
+      console.log(`Cannot refund payment with status: ${payment.status}`);
+      return res.status(400).json({ error: `Cannot refund a payment that is already ${payment.status}` });
+    }
+    
+    // Update status
+    payment.status = 'refunded';
+    await payment.save();
+    console.log(`Payment ${payment.P_ID} successfully refunded`);
+    
+    res.json({ 
+      message: 'Payment refunded successfully',
+      payment: payment
+    });
+  } catch (error) {
+    console.error('Error refunding payment:', error);
+    res.status(500).json({ error: error.message || 'Internal server error during refund process' });
+  }
+});
+
 // Update a payment record
 router.put('/:id', async (req, res) => {
   try {
