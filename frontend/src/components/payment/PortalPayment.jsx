@@ -200,6 +200,7 @@ const PortalPayment = ({ amount, eventId, packageId, onCancel }) => {
     }));
   };
 
+  
   return (
     <div>
       <h2 className="text-lg font-semibold text-sky-700 mb-4">Payment Bank</h2>

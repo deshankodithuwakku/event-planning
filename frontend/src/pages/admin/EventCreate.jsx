@@ -34,6 +34,7 @@ const EventCreate = () => {
   // UI state management
   const [loading, setLoading] = useState(false);
   const [fetchingId, setFetchingId] = useState(true);
+  const [nameError, setNameError] = useState('');
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
@@ -68,11 +69,24 @@ const EventCreate = () => {
   /**
    * Handles form input changes
    * Updates formData state with new values
+   * Validates that Event Name contains only letters
    */
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'E_name') {
+      // Validate for letters only using regex
+      if (value && !/^[a-zA-Z\s]+$/.test(value)) {
+        setNameError('Event name can only contain letters');
+        return;
+      } else {
+        setNameError('');
+      }
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
   };
 
@@ -89,9 +103,14 @@ const EventCreate = () => {
       return;
     }
 
-    // Validate event name (minimum 3 characters)
+    // Validate event name (minimum 3 characters and letters only)
     if (formData.E_name.length < 3) {
       enqueueSnackbar('Event name must be at least 3 characters long', { variant: 'error' });
+      return;
+    }
+
+    if (!/^[a-zA-Z\s]+$/.test(formData.E_name)) {
+      enqueueSnackbar('Event name can only contain letters', { variant: 'error' });
       return;
     }
 
@@ -158,7 +177,7 @@ const EventCreate = () => {
             {/* Event Name field */}
             <div>
               <label htmlFor="E_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Event Name *
+                Event Name * (letters only)
               </label>
               <input
                 id="E_name"
@@ -166,10 +185,13 @@ const EventCreate = () => {
                 type="text"
                 value={formData.E_name}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="Enter event name"
+                className={`block w-full px-3 py-2 border ${nameError ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500`}
+                placeholder="Enter event name (letters only)"
                 required
               />
+              {nameError && (
+                <p className="mt-1 text-sm text-red-600">{nameError}</p>
+              )}
             </div>
             
             {/* Event Description field */}
