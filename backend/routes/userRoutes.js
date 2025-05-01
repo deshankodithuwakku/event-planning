@@ -32,7 +32,7 @@ router.post('/customer', createCustomer);
 // Make sure this route is accessible without authentication for backward compatibility
 router.put('/:id', updateUser);
 
-// Protected routes
+// Protected routes - For fetching all users, ensure proper authentication
 router.get('/', authenticate, isAdmin, getAllUsers);
 router.get('/customers', authenticate, isAdmin, getAllCustomers);
 router.get('/admins', authenticate, isAdmin, getAllAdmins);

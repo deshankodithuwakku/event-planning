@@ -8,17 +8,40 @@ export const authenticate = (req, res, next) => {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ 
+        message: 'Authentication required. Please provide a valid token.',
+        details: 'Authorization header missing or malformed' 
+      });
     }
     
     const token = authHeader.split(' ')[1];
-    const decodedToken = verifyToken(token);
     
-    // Attach user info to request object
-    req.user = decodedToken;
-    next();
+    if (!token) {
+      return res.status(401).json({ 
+        message: 'Authentication required. Please provide a valid token.',
+        details: 'Token is empty'
+      });
+    }
+    
+    try {
+      const decodedToken = verifyToken(token);
+      
+      // Attach user info to request object
+      req.user = decodedToken;
+      next();
+    } catch (tokenError) {
+      console.error('Token verification error:', tokenError);
+      return res.status(401).json({ 
+        message: 'Invalid or expired token',
+        details: tokenError.message
+      });
+    }
   } catch (error) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
+    console.error('Authentication middleware error:', error);
+    return res.status(500).json({ 
+      message: 'Authentication error',
+      details: error.message
+    });
   }
 };
 

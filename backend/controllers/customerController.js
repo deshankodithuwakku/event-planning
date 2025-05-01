@@ -93,9 +93,11 @@ export const deleteCustomer = async (req, res) => {
   // Start a session for transaction
   const session = await mongoose.startSession();
   session.startTransaction();
+  let transactionCommitted = false;
 
   try {
     const { id } = req.params;
+    console.log(`Starting cascading deletion for customer: ${id}`);
 
     // Step 1: Find the customer to make sure they exist
     const customer = await Customer.findOne({ C_ID: id }).session(session);
@@ -105,49 +107,54 @@ export const deleteCustomer = async (req, res) => {
       session.endSession();
       return res.status(404).json({ message: 'Customer not found' });
     }
-
+    
     // Step 2: Delete all feedback records associated with this customer
     const deletedFeedback = await Feedback.deleteMany({ 
       customerId: id 
     }).session(session);
+    console.log(`Deleted ${deletedFeedback.deletedCount} feedback records for customer ${id}`);
     
-    // Step 3: Find and delete payment records related to this customer
-    // This will depend on how payments are linked to customers in your system
-    // If payments have a direct reference to the customer ID:
-    // const deletedPayments = await Payment.deleteMany({ 
-    //   customerId: id 
-    // }).session(session);
+    // Step 3: Delete all payment transactions (both Card and Portal payments)
+    // Since Payment uses discriminators, this will remove all payment types
+    const deletedPayments = await Payment.deleteMany({ 
+      customerId: id 
+    }).session(session);
+    console.log(`Deleted ${deletedPayments.deletedCount} payment transactions for customer ${id}`);
 
-    // Step 4: Delete any bookings or other related records
-    // Implement based on your data models
-    // const deletedBookings = await Booking.deleteMany({
-    //   customerId: id
-    // }).session(session);
-
-    // Step 5: Finally delete the customer
+    // Step 4: Finally delete the customer
     const result = await Customer.findOneAndDelete({ 
       C_ID: id 
     }).session(session);
 
     // Commit the transaction
     await session.commitTransaction();
+    transactionCommitted = true;
     session.endSession();
+    console.log(`Successfully completed cascading deletion for customer ${id}`);
 
     return res.status(200).json({ 
       message: 'Customer and all related records deleted successfully',
       deletedRecords: {
+        customer: result,
         feedback: deletedFeedback.deletedCount,
-        // Include counts for other deleted record types
-        // payments: deletedPayments.deletedCount,
-        // bookings: deletedBookings.deletedCount,
+        paymentTransactions: deletedPayments.deletedCount
       }
     });
   } catch (error) {
-    // Abort transaction on error
-    await session.abortTransaction();
-    session.endSession();
+    // Only abort if not already committed
+    if (!transactionCommitted) {
+      try {
+        await session.abortTransaction();
+      } catch (abortError) {
+        console.error(`Error aborting transaction: ${abortError.message}`);
+      }
+    }
     
-    console.log(error.message);
+    if (session.inTransaction()) {
+      session.endSession();
+    }
+    
+    console.error(`Error during cascading delete for customer: ${error.message}`);
     res.status(500).send({ message: error.message });
   }
 };

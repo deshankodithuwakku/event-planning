@@ -249,9 +249,11 @@ export const updateAdmin = async (req, res) => {
 export const deleteUser = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+  let transactionCommitted = false;
 
   try {
     const { id } = req.params;
+    console.log(`Starting deletion process for user: ${id}`);
 
     // Find the user to make sure they exist
     const user = await User.findOne({ userId: id }).session(session);
@@ -264,32 +266,53 @@ export const deleteUser = async (req, res) => {
 
     // Delete related records based on role
     if (user.role === 'customer') {
-      // Delete feedback records
+      // 1. Delete feedback records first
       const deletedFeedback = await Feedback.deleteMany({ 
         customerId: id 
       }).session(session);
+      console.log(`Deleted ${deletedFeedback.deletedCount} feedback records for customer ${id}`);
       
-      // Potentially delete payment records
-      // const deletedPayments = await Payment.deleteMany({ customerId: id }).session(session);
+      // 2. Delete all payment transactions (includes both Card and Portal payments)
+      // Since we're using discriminator models, Payment.deleteMany will remove all types
+      const deletedPayments = await Payment.deleteMany({ 
+        customerId: id 
+      }).session(session);
+      console.log(`Deleted ${deletedPayments.deletedCount} payment transactions for customer ${id}`);
     }
 
-    // Delete the user
+    // Finally, delete the user
     const result = await User.findOneAndDelete({ userId: id }).session(session);
+    console.log(`Deleted user account for ${id}`);
 
     // Commit the transaction
     await session.commitTransaction();
+    transactionCommitted = true;
     session.endSession();
+    console.log(`Successfully completed cascading deletion for user ${id}`);
 
     return res.status(200).json({ 
       message: 'User and all related records deleted successfully',
-      deletedUser: result
+      deletedUser: result,
+      relatedRecordsDeleted: user.role === 'customer' ? {
+        feedback: deletedFeedback?.deletedCount || 0,
+        paymentTransactions: deletedPayments?.deletedCount || 0,
+      } : {}
     });
   } catch (error) {
-    // Abort transaction on error
-    await session.abortTransaction();
-    session.endSession();
+    // Only abort if not already committed
+    if (!transactionCommitted) {
+      try {
+        await session.abortTransaction();
+      } catch (abortError) {
+        console.error(`Error aborting transaction: ${abortError.message}`);
+      }
+    }
     
-    console.log(error.message);
+    if (session.inTransaction()) {
+      session.endSession();
+    }
+    
+    console.error(`Error during cascading delete for user: ${error.message}`);
     res.status(500).send({ message: error.message });
   }
 };
