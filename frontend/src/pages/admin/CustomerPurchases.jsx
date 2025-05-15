@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
-import { FaArrowLeft, FaStar, FaFilePdf, FaEye } from 'react-icons/fa';
+import { FaArrowLeft, FaStar, FaFilePdf, FaEye, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -12,6 +12,7 @@ const CustomerPurchases = () => {
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
   const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [expandedCustomers, setExpandedCustomers] = useState({});
 
   useEffect(() => {
     // Check if admin is logged in
@@ -41,12 +42,45 @@ const CustomerPurchases = () => {
     }
   };
 
+  // Group purchases by customer ID
+  const getGroupedPurchases = () => {
+    const groupedData = {};
+    
+    purchases.forEach(purchase => {
+      const customerId = purchase.customer.customerId;
+      
+      if (!groupedData[customerId]) {
+        groupedData[customerId] = {
+          customer: purchase.customer,
+          purchases: []
+        };
+      }
+      
+      groupedData[customerId].purchases.push(purchase);
+    });
+    
+    return Object.values(groupedData);
+  };
+
+  const toggleCustomerExpansion = (customerId) => {
+    setExpandedCustomers(prev => ({
+      ...prev,
+      [customerId]: !prev[customerId]
+    }));
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const calculateTotalSpent = (purchases) => {
+    return purchases.reduce((total, purchase) => 
+      total + parseFloat(purchase.payment.amount), 0
+    ).toFixed(2);
   };
 
   // Generate PDF report of all customer purchases
@@ -63,21 +97,31 @@ const CustomerPurchases = () => {
       doc.setFontSize(10);
       doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
       
+      // Get grouped data
+      const groupedPurchases = getGroupedPurchases();
+      
       // Format data for table
-      const tableData = purchases.map((purchase) => [
-        purchase.customer.customerId,
-        purchase.customer.name,
-        purchase.event.name,
-        purchase.event.eventId,
-        `$${purchase.payment.amount}`,
-        purchase.payment.status,
-        purchase.feedback ? `${purchase.feedback.rating}/5` : 'No Feedback'
-      ]);
+      const tableData = groupedPurchases.map((groupData) => {
+        const { customer, purchases } = groupData;
+        const totalSpent = calculateTotalSpent(purchases);
+        const eventCount = purchases.length;
+        const events = purchases.map(p => p.event.name).join(", ");
+        
+        return [
+          customer.customerId,
+          customer.name,
+          eventCount,
+          events,
+          `$${totalSpent}`,
+          purchases.every(p => p.payment.status === 'paid') ? 'All Paid' : 'Mixed',
+          purchases.some(p => p.feedback) ? 'Has Feedback' : 'No Feedback'
+        ];
+      });
       
       // Create table
       doc.autoTable({
         startY: 30,
-        head: [['Customer ID', 'Customer Name', 'Event Name', 'Event ID', 'Amount', 'Status', 'Feedback']],
+        head: [['Customer ID', 'Customer Name', 'Total Events', 'Events', 'Total Amount', 'Status', 'Feedback']],
         body: tableData,
         headStyles: {
           fillColor: [147, 51, 234],
@@ -90,7 +134,8 @@ const CustomerPurchases = () => {
       });
       
       // Add summary
-      doc.text(`Total Purchases: ${purchases.length}`, 14, doc.lastAutoTable.finalY + 10);
+      doc.text(`Total Customers: ${groupedPurchases.length}`, 14, doc.lastAutoTable.finalY + 10);
+      doc.text(`Total Purchases: ${purchases.length}`, 14, doc.lastAutoTable.finalY + 18);
       
       // Save the PDF
       doc.save('customer_purchases_report.pdf');
@@ -148,6 +193,8 @@ const CustomerPurchases = () => {
     );
   };
 
+  const groupedPurchases = getGroupedPurchases();
+
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       {selectedFeedback && (
@@ -194,70 +241,126 @@ const CustomerPurchases = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feedback</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Events</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Spent</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {purchases.map((purchase, index) => (
-                    <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {purchase.customer.customerId}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {purchase.customer.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {purchase.event.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {purchase.event.eventId}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <span className="px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full">
-                          ${purchase.payment.amount}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full 
-                          ${purchase.payment.status === 'paid' ? 'bg-green-100 text-green-800' : 
-                          purchase.payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                          'bg-red-100 text-red-800'}`}>
-                          {purchase.payment.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(purchase.payment.date)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {purchase.feedback ? (
-                          <div className="flex items-center">
-                            <div className="flex text-yellow-400 mr-2">
-                              {[...Array(5)].map((_, i) => (
-                                <FaStar 
-                                  key={i} 
-                                  className={i < purchase.feedback.rating ? "text-yellow-400" : "text-gray-300"} 
-                                  size={12}
-                                />
-                              ))}
-                            </div>
+                  {groupedPurchases.map((groupData, index) => {
+                    const { customer, purchases } = groupData;
+                    const customerId = customer.customerId;
+                    const isExpanded = expandedCustomers[customerId];
+                    const totalSpent = calculateTotalSpent(purchases);
+                    
+                    return (
+                      <React.Fragment key={customerId}>
+                        <tr 
+                          className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} cursor-pointer hover:bg-purple-50`}
+                          onClick={() => toggleCustomerExpansion(customerId)}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {customer.customerId}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {customer.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {purchases.length}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <span className="px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full">
+                              ${totalSpent}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button
-                              onClick={() => setSelectedFeedback(purchase.feedback)}
-                              className="text-purple-600 hover:text-purple-800 flex items-center"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCustomerExpansion(customerId);
+                              }}
+                              className="text-purple-600 hover:text-purple-900 flex items-center"
                             >
-                              <FaEye className="mr-1" /> View
+                              {isExpanded ? <FaChevronUp className="mr-1" /> : <FaChevronDown className="mr-1" />}
+                              {isExpanded ? 'Hide Details' : 'View Details'}
                             </button>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">No feedback</span>
+                          </td>
+                        </tr>
+                        
+                        {isExpanded && (
+                          <tr className="bg-purple-50">
+                            <td colSpan="5" className="px-6 py-4">
+                              <div className="rounded-lg border border-purple-100 overflow-hidden">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                  <thead className="bg-purple-100">
+                                    <tr>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">Event Name</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">Event ID</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">Amount</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">Status</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">Date</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">Feedback</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {purchases.map((purchase, i) => (
+                                      <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                                        <td className="px-4 py-3 text-sm text-gray-500">
+                                          {purchase.event.name}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-500">
+                                          {purchase.event.eventId}
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                                          <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                            ${purchase.payment.amount}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                          <span className={`px-2 py-1 text-xs font-semibold rounded-full 
+                                            ${purchase.payment.status === 'paid' ? 'bg-green-100 text-green-800' : 
+                                            purchase.payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                            'bg-red-100 text-red-800'}`}>
+                                            {purchase.payment.status}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                          {formatDate(purchase.payment.date)}
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                                          {purchase.feedback ? (
+                                            <div className="flex items-center">
+                                              <div className="flex text-yellow-400 mr-2">
+                                                {[...Array(5)].map((_, i) => (
+                                                  <FaStar 
+                                                    key={i} 
+                                                    className={i < purchase.feedback.rating ? "text-yellow-400" : "text-gray-300"} 
+                                                    size={12}
+                                                  />
+                                                ))}
+                                              </div>
+                                              <button
+                                                onClick={() => setSelectedFeedback(purchase.feedback)}
+                                                className="text-purple-600 hover:text-purple-800 flex items-center"
+                                              >
+                                                <FaEye className="mr-1" /> View
+                                              </button>
+                                            </div>
+                                          ) : (
+                                            <span className="text-gray-400">No feedback</span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                    </tr>
-                  ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
