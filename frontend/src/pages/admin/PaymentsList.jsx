@@ -7,6 +7,7 @@ import EditPayment from './EditPayment';
 import { getImageUrl } from '../../utils/urlHelper';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { addPdfHeader, addPdfFooter, addStatsSummary } from '../../utils/pdfUtils';
 
 const PaymentsList = () => {
   const [payments, setPayments] = useState([]);
@@ -158,56 +159,24 @@ const PaymentsList = () => {
   const generatePDF = () => {
     try {
       const doc = new jsPDF();
-
-      // Add title
-      doc.setFontSize(20);
-      doc.setTextColor(40, 40, 40);
-      doc.text('Payment Transactions Report', 105, 15, { align: 'center' });
-
-      // Add date and filter information
-      doc.setFontSize(10);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
-      doc.text(
-        `Filter: ${
+      const primaryColor = [147, 51, 234]; // Purple color
+      
+      // Add professional header
+      const startY = addPdfHeader(doc, 'Payment Transactions Report', {
+        subtitle: `Filter: ${
           filter === 'all' ? 'All Payments' : filter === 'card' ? 'Card Payments' : 'Portal Payments'
         }`,
-        105,
-        27,
-        { align: 'center' }
-      );
-
-      // Format data for table - include customer ID and event name
-      const tableData = payments.map((payment) => [
-        payment.P_ID,
-        payment.customerId || 'N/A',
-        events[payment.eventId] || 'Unknown Event',
-        payment.paymentType,
-        `$${payment.p_amount}`,
-        new Date(payment.p_date).toLocaleDateString(),
-        payment.paymentType === 'Card' ? payment.c_description : payment.p_description,
-      ]);
-
-      // Create table with updated headers
-      doc.autoTable({
-        startY: 35,
-        head: [['Payment ID', 'Customer ID', 'Event Name', 'Type', 'Amount', 'Date', 'Description']],
-        body: tableData,
-        headStyles: {
-          fillColor: [147, 51, 234], // Purple color
-          textColor: [255, 255, 255],
-        },
-        alternateRowStyles: {
-          fillColor: [249, 245, 255],
-        },
-        margin: { top: 35 },
+        primaryColor
       });
-
-      // Calculate statistics for different statuses
+      
+      // Calculate key statistics for dashboard
       let cardPayments = 0;
       let portalPayments = 0;
       let totalAmount = 0;
       let refundedPayments = 0;
       let refundedAmount = 0;
+      let confirmedPayments = 0;
+      let cancelledPayments = 0;
       
       payments.forEach(payment => {
         if (payment.paymentType === 'Card') cardPayments++;
@@ -216,21 +185,123 @@ const PaymentsList = () => {
         if (payment.status === 'refunded') {
           refundedPayments++;
           refundedAmount += payment.p_amount;
+        } else if (payment.status === 'confirmed') {
+          confirmedPayments++;
+        } else if (payment.status === 'cancelled') {
+          cancelledPayments++;
         }
         
         totalAmount += payment.p_amount;
       });
 
-      // Add summary information
-      doc.text(`Total Payments: ${payments.length}`, 14, doc.lastAutoTable.finalY + 10);
-      doc.text(`Total Amount: $${totalAmount.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 15);
-      doc.text(`Card Payments: ${cardPayments}`, 14, doc.lastAutoTable.finalY + 20);
-      doc.text(`Portal Payments: ${portalPayments}`, 14, doc.lastAutoTable.finalY + 25);
-      doc.text(`Refunded Payments: ${refundedPayments}`, 14, doc.lastAutoTable.finalY + 30);
-      doc.text(`Refunded Amount: $${refundedAmount.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 35);
+      // Add quick statistics dashboard at the top
+      doc.setFillColor(240, 240, 250);
+      doc.roundedRect(14, startY, doc.internal.pageSize.width - 28, 28, 3, 3, 'F');
+      
+      // Show key indicators
+      const dashboardY = startY + 8;
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 80);
+      
+      // Total payments indicator
+      doc.text('Total Payments:', 24, dashboardY);
+      doc.setFontSize(14);
+      doc.setTextColor(...primaryColor);
+      doc.setFont('helvetica', 'bold');
+      doc.text(payments.length.toString(), 24, dashboardY + 8);
+      
+      // Total amount indicator
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 80);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Total Amount:', 84, dashboardY);
+      doc.setFontSize(14);
+      doc.setTextColor(46, 125, 50); // Green color for money
+      doc.setFont('helvetica', 'bold');
+      doc.text(`$${totalAmount.toFixed(2)}`, 84, dashboardY + 8);
+      
+      // Card/Portal split
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 80);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Card / Portal Split:', 144, dashboardY);
+      doc.setFontSize(14);
+      doc.setTextColor(...primaryColor);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${cardPayments} / ${portalPayments}`, 144, dashboardY + 8);
 
-      // Save the PDF
-      doc.save('payment_transactions_report.pdf');
+      // Format data for table with more meaningful columns
+      const tableData = payments.map((payment) => [
+        payment.P_ID,
+        payment.customerId || 'N/A',
+        events[payment.eventId] || payment.eventId || 'Unknown',
+        payment.paymentType,
+        `$${payment.p_amount}`,
+        payment.status,
+        new Date(payment.p_date).toLocaleDateString(),
+        payment.paymentType === 'Card' ? (payment.c_description || '').substring(0, 20) : 
+                                        (payment.p_description || '').substring(0, 20)
+      ]);
+
+      // Create table with updated headers and better styling
+      doc.autoTable({
+        startY: startY + 35,
+        head: [['ID', 'Customer', 'Event', 'Type', 'Amount', 'Status', 'Date', 'Description']],
+        body: tableData,
+        headStyles: {
+          fillColor: primaryColor,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [249, 245, 255]
+        },
+        columnStyles: {
+          4: {halign: 'right'}, // Right-align amount column
+          5: {
+            fontStyle: (value) => {
+              return value === 'confirmed' ? 'bold' : 'normal';
+            },
+            textColor: (value) => {
+              if (value === 'confirmed') return [46, 125, 50]; // green
+              if (value === 'refunded') return [33, 150, 243]; // blue
+              if (value === 'cancelled') return [229, 57, 53]; // red
+              return [80, 80, 80]; // default gray
+            }
+          }
+        },
+        styles: {
+          fontSize: 9,
+          cellPadding: 3
+        },
+        margin: { top: startY + 35 },
+      });
+      
+      // Get the final Y position after the table is rendered
+      const finalY = doc.lastAutoTable.finalY;
+      
+      // Add comprehensive statistics summary
+      const stats = [
+        { label: 'Total Payments', value: payments.length.toString() },
+        { label: 'Total Amount', value: `$${totalAmount.toFixed(2)}` },
+        { label: 'Card Payments', value: cardPayments.toString() },
+        { label: 'Portal Payments', value: portalPayments.toString() },
+        { label: 'Confirmed Payments', value: confirmedPayments.toString() },
+        { label: 'Refunded Payments', value: refundedPayments.toString() },
+        { label: 'Refunded Amount', value: `$${refundedAmount.toFixed(2)}` },
+        { label: 'Cancelled Payments', value: cancelledPayments.toString() },
+        { label: 'Average Payment', value: `$${(totalAmount / payments.length).toFixed(2)}` },
+        { label: 'Card Payment %', value: `${((cardPayments / payments.length) * 100).toFixed(1)}%` }
+      ];
+      
+      addStatsSummary(doc, finalY + 15, stats, primaryColor);
+      
+      // Add footer
+      addPdfFooter(doc, 1);
+      
+      // Save the PDF with more descriptive filename including date
+      const dateStr = new Date().toISOString().split('T')[0];
+      doc.save(`payment_transactions_report_${dateStr}.pdf`);
       enqueueSnackbar('PDF generated successfully!', { variant: 'success' });
     } catch (error) {
       console.error('PDF generation error:', error);
