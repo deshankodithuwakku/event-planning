@@ -19,6 +19,17 @@ const PaymentsList = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [events, setEvents] = useState({}); // Store events by ID for quick lookup
 
+  // Add filter state for PDF reports
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [pdfFilters, setPdfFilters] = useState({
+    paymentType: 'all',
+    paymentStatus: 'all',
+    dateFrom: '',
+    dateTo: '',
+    minAmount: '',
+    maxAmount: ''
+  });
+
   useEffect(() => {
     // Check if admin is logged in
     const adminData = localStorage.getItem('adminData');
@@ -141,6 +152,141 @@ const PaymentsList = () => {
     return null;
   };
 
+  // PDF Filter Modal Component
+  const FilterModal = ({ onClose, onApply, currentFilters }) => {
+    const [localFilters, setLocalFilters] = useState(currentFilters);
+    
+    const handleFilterChange = (e) => {
+      const { name, value } = e.target;
+      setLocalFilters(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    };
+    
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      onApply(localFilters);
+      onClose();
+    };
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full">
+          <h2 className="text-xl font-bold text-purple-800 mb-4">Filter Payment Report</h2>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Payment Type
+              </label>
+              <select
+                name="paymentType"
+                value={localFilters.paymentType}
+                onChange={handleFilterChange}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              >
+                <option value="all">All Types</option>
+                <option value="Card">Card Payments</option>
+                <option value="Portal">Portal Payments</option>
+              </select>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Payment Status
+              </label>
+              <select
+                name="paymentStatus"
+                value={localFilters.paymentStatus}
+                onChange={handleFilterChange}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              >
+                <option value="all">All Statuses</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="refunded">Refunded</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date From
+                </label>
+                <input
+                  type="date"
+                  name="dateFrom"
+                  value={localFilters.dateFrom}
+                  onChange={handleFilterChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date To
+                </label>
+                <input
+                  type="date"
+                  name="dateTo"
+                  value={localFilters.dateTo}
+                  onChange={handleFilterChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Min Amount ($)
+                </label>
+                <input
+                  type="number"
+                  name="minAmount"
+                  value={localFilters.minAmount}
+                  onChange={handleFilterChange}
+                  placeholder="No minimum"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Max Amount ($)
+                </label>
+                <input
+                  type="number"
+                  name="maxAmount"
+                  value={localFilters.maxAmount}
+                  onChange={handleFilterChange}
+                  placeholder="No maximum"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                Apply & Generate PDF
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   // Modify the payment status badge renderer to highlight refunded payments
   const getPaymentStatusBadge = (status) => {
     switch (status) {
@@ -156,20 +302,86 @@ const PaymentsList = () => {
   };
 
   // Generate PDF report of all payments
-  const generatePDF = () => {
+  const generatePDF = (appliedFilters = pdfFilters) => {
     try {
+      // Filter payments based on applied filters
+      let filteredPayments = [...payments];
+      
+      // Filter by payment type
+      if (appliedFilters.paymentType !== 'all') {
+        filteredPayments = filteredPayments.filter(p => p.paymentType === appliedFilters.paymentType);
+      }
+      
+      // Filter by payment status
+      if (appliedFilters.paymentStatus !== 'all') {
+        filteredPayments = filteredPayments.filter(p => p.status === appliedFilters.paymentStatus);
+      }
+      
+      // Filter by date range
+      if (appliedFilters.dateFrom) {
+        const startDate = new Date(appliedFilters.dateFrom);
+        filteredPayments = filteredPayments.filter(p => 
+          p.p_date ? new Date(p.p_date) >= startDate : true
+        );
+      }
+      
+      if (appliedFilters.dateTo) {
+        const endDate = new Date(appliedFilters.dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        filteredPayments = filteredPayments.filter(p => 
+          p.p_date ? new Date(p.p_date) <= endDate : true
+        );
+      }
+      
+      // Filter by amount range
+      if (appliedFilters.minAmount) {
+        const minAmount = parseFloat(appliedFilters.minAmount);
+        filteredPayments = filteredPayments.filter(p => 
+          p.p_amount ? parseFloat(p.p_amount) >= minAmount : true
+        );
+      }
+      
+      if (appliedFilters.maxAmount) {
+        const maxAmount = parseFloat(appliedFilters.maxAmount);
+        filteredPayments = filteredPayments.filter(p => 
+          p.p_amount ? parseFloat(p.p_amount) <= maxAmount : true
+        );
+      }
+
       const doc = new jsPDF();
       const primaryColor = [147, 51, 234]; // Purple color
       
+      // Build subtitle based on filters
+      let subtitle = 'Payment Transactions Report';
+      if (appliedFilters.paymentType !== 'all') {
+        subtitle = `${appliedFilters.paymentType} Payments Report`;
+      }
+      if (appliedFilters.paymentStatus !== 'all') {
+        subtitle += ` - ${appliedFilters.paymentStatus} status`;
+      }
+      
       // Add professional header
       const startY = addPdfHeader(doc, 'Payment Transactions Report', {
-        subtitle: `Filter: ${
-          filter === 'all' ? 'All Payments' : filter === 'card' ? 'Card Payments' : 'Portal Payments'
-        }`,
+        subtitle,
         primaryColor
       });
       
-      // Calculate key statistics for dashboard
+      // Add filters applied section
+      let filtersText = [];
+      if (appliedFilters.paymentType !== 'all') filtersText.push(`Type: ${appliedFilters.paymentType}`);
+      if (appliedFilters.paymentStatus !== 'all') filtersText.push(`Status: ${appliedFilters.paymentStatus}`);
+      if (appliedFilters.dateFrom) filtersText.push(`From: ${appliedFilters.dateFrom}`);
+      if (appliedFilters.dateTo) filtersText.push(`To: ${appliedFilters.dateTo}`);
+      if (appliedFilters.minAmount) filtersText.push(`Min: $${appliedFilters.minAmount}`);
+      if (appliedFilters.maxAmount) filtersText.push(`Max: $${appliedFilters.maxAmount}`);
+      
+      if (filtersText.length > 0) {
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Filters applied: ${filtersText.join(' | ')}`, 14, startY + 30);
+      }
+      
+      // Calculate key statistics from filtered payments for dashboard
       let cardPayments = 0;
       let portalPayments = 0;
       let totalAmount = 0;
@@ -178,7 +390,7 @@ const PaymentsList = () => {
       let confirmedPayments = 0;
       let cancelledPayments = 0;
       
-      payments.forEach(payment => {
+      filteredPayments.forEach(payment => {
         if (payment.paymentType === 'Card') cardPayments++;
         else if (payment.paymentType === 'Portal') portalPayments++;
         
@@ -208,7 +420,7 @@ const PaymentsList = () => {
       doc.setFontSize(14);
       doc.setTextColor(...primaryColor);
       doc.setFont('helvetica', 'bold');
-      doc.text(payments.length.toString(), 24, dashboardY + 8);
+      doc.text(filteredPayments.length.toString(), 24, dashboardY + 8);
       
       // Total amount indicator
       doc.setFontSize(10);
@@ -230,8 +442,8 @@ const PaymentsList = () => {
       doc.setFont('helvetica', 'bold');
       doc.text(`${cardPayments} / ${portalPayments}`, 144, dashboardY + 8);
 
-      // Format data for table with more meaningful columns
-      const tableData = payments.map((payment) => [
+      // Format data for table with more meaningful columns - now using filtered payments
+      const tableData = filteredPayments.map((payment) => [
         payment.P_ID,
         payment.customerId || 'N/A',
         events[payment.eventId] || payment.eventId || 'Unknown',
@@ -280,9 +492,9 @@ const PaymentsList = () => {
       // Get the final Y position after the table is rendered
       const finalY = doc.lastAutoTable.finalY;
       
-      // Add comprehensive statistics summary
+      // Add comprehensive statistics summary with filtered data
       const stats = [
-        { label: 'Total Payments', value: payments.length.toString() },
+        { label: 'Total Payments', value: filteredPayments.length.toString() },
         { label: 'Total Amount', value: `$${totalAmount.toFixed(2)}` },
         { label: 'Card Payments', value: cardPayments.toString() },
         { label: 'Portal Payments', value: portalPayments.toString() },
@@ -290,8 +502,8 @@ const PaymentsList = () => {
         { label: 'Refunded Payments', value: refundedPayments.toString() },
         { label: 'Refunded Amount', value: `$${refundedAmount.toFixed(2)}` },
         { label: 'Cancelled Payments', value: cancelledPayments.toString() },
-        { label: 'Average Payment', value: `$${(totalAmount / payments.length).toFixed(2)}` },
-        { label: 'Card Payment %', value: `${((cardPayments / payments.length) * 100).toFixed(1)}%` }
+        { label: 'Average Payment', value: filteredPayments.length ? `$${(totalAmount / filteredPayments.length).toFixed(2)}` : '$0.00' },
+        { label: 'Card Payment %', value: filteredPayments.length ? `${((cardPayments / filteredPayments.length) * 100).toFixed(1)}%` : '0%' }
       ];
       
       addStatsSummary(doc, finalY + 15, stats, primaryColor);
@@ -299,9 +511,20 @@ const PaymentsList = () => {
       // Add footer
       addPdfFooter(doc, 1);
       
-      // Save the PDF with more descriptive filename including date
+      // Save the PDF with more descriptive filename including date and filters
       const dateStr = new Date().toISOString().split('T')[0];
-      doc.save(`payment_transactions_report_${dateStr}.pdf`);
+      let filenameParts = ['payment_transactions_report'];
+      
+      if (appliedFilters.paymentType !== 'all') {
+        filenameParts.push(appliedFilters.paymentType.toLowerCase());
+      }
+      
+      if (appliedFilters.paymentStatus !== 'all') {
+        filenameParts.push(appliedFilters.paymentStatus);
+      }
+      
+      filenameParts.push(dateStr);
+      doc.save(filenameParts.join('_') + '.pdf');
       enqueueSnackbar('PDF generated successfully!', { variant: 'success' });
     } catch (error) {
       console.error('PDF generation error:', error);
@@ -313,6 +536,17 @@ const PaymentsList = () => {
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       {isEditModalOpen && selectedPayment && (
         <EditPayment payment={selectedPayment} onClose={handleEditClose} onSave={handleEditSave} />
+      )}
+      
+      {showFilterModal && (
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
+          onApply={(appliedFilters) => {
+            setPdfFilters(appliedFilters);
+            generatePDF(appliedFilters);
+          }}
+          currentFilters={pdfFilters}
+        />
       )}
 
       <div className="max-w-6xl mx-auto">
@@ -326,10 +560,10 @@ const PaymentsList = () => {
 
           {!loading && payments.length > 0 && (
             <button
-              onClick={generatePDF}
+              onClick={() => setShowFilterModal(true)}
               className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
             >
-              <FaFilePdf className="mr-2" /> Download PDF Report
+              <FaFilePdf className="mr-2" /> <FaFilter className="mr-1" /> Download PDF Report
             </button>
           )}
         </div>
