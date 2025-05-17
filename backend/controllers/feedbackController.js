@@ -80,7 +80,7 @@ export const getFeedback = async (req, res) => {
 export const deleteFeedback = async (req, res) => {
   try {
     const { id } = req.params;
-    const { customerId } = req.body;
+    const { customerId, isAdmin } = req.body;
     
     if (!customerId) {
       return res.status(401).json({ 
@@ -105,8 +105,8 @@ export const deleteFeedback = async (req, res) => {
       });
     }
     
-    // Check if current user is the owner of this feedback
-    if (feedback.customerId !== customerId) {
+    // Check if current user is the owner of this feedback or an admin
+    if (feedback.customerId !== customerId && !isAdmin) {
       return res.status(403).json({ 
         message: 'You can only delete your own feedback', 
         status: 'error' 

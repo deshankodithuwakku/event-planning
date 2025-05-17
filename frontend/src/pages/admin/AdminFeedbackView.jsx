@@ -440,13 +440,17 @@ const AdminFeedbackView = () => {
         const adminId = adminData.A_ID || adminData.userId;
         
         await axios.delete(`http://localhost:5555/api/feedback/${id}`, {
-          data: { customerId: adminId }
+          data: { 
+            customerId: adminId,
+            isAdmin: true // Add flag to identify admin request
+          }
         });
         
         enqueueSnackbar('Feedback deleted successfully', { variant: 'success' });
         setFeedbacks(feedbacks.filter(feedback => feedback._id !== id));
       } catch (error) {
         enqueueSnackbar('Failed to delete feedback', { variant: 'error' });
+        console.error('Delete error:', error);
       }
     }
   };
